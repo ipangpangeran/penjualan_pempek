@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-card: var(--brand-card);
+  --color-brand-bg-input: var(--brand-bg-input);
+  --color-brand-border: var(--brand-border);
+  --color-brand-text: var(--brand-text);
+  --color-brand-text-muted: var(--brand-text-muted);
+  --color-brand-header: var(--brand-header);
+  --color-brand-table-hdr: var(--brand-table-hdr);
+  --color-brand-table-hover: var(--brand-table-hover);
+  --color-brand-emerald: #10B981;
+  --color-brand-emerald-dark: #059669;
+  --font-sans: 'Inter', sans-serif;
+}
+
+:root {
+  /* Comfortable Light Mode Palette */
+  --brand-dark: #f3f4f6;
+  --brand-card: #ffffff;
+  --brand-bg-input: #ffffff;
+  --brand-border: #e5e7eb;
+  --brand-text: #1f2937;
+  --brand-text-muted: #6b7280;
+  --brand-header: #ffffff;
+  --brand-table-hdr: #f9fafb;
+  --brand-table-hover: #f3f4f6;
+}
+
+:root.dark {
+  /* Soothing Soft Dark Mode Palette (Matte Charcoal & Nordic Slate) */
+  --brand-dark: #12141c;
+  --brand-card: #1c1e28;
+  --brand-bg-input: #12141c;
+  --brand-border: #2b303c;
+  --brand-text: #e2e8f0;
+  --brand-text-muted: #94a3b8;
+  --brand-header: #1c1e28;
+  --brand-table-hdr: #12141c;
+  --brand-table-hover: #232734;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-dark text-brand-text font-sans antialiased transition-colors duration-250;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+/* Premium Soothing Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brand-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-text-muted);
+}
+
+/* Custom styles for tables */
+.table-container {
+  @apply overflow-x-auto rounded-xl border border-brand-border bg-brand-card shadow-sm transition-colors duration-200;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
