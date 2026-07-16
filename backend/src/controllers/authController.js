@@ -3,9 +3,8 @@ import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma.js';
 import { logAuditAction } from '../middleware/auditLogger.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_pempek_gluten_free_key_2026';
-
 export const login = async (req, res) => {
+  const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_pempek_gluten_free_key_2026';
   const { username, password } = req.body;
 
   if (!username || !password) {

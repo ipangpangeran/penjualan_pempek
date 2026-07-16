@@ -1,11 +1,11 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
-import dotenv from 'dotenv';
 import apiRouter from './routes/api.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
