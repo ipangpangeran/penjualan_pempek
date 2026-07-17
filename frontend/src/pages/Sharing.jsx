@@ -10,17 +10,13 @@ import {
   Coins,
   Store,
   Info,
-  TrendingUp,
 } from 'lucide-react';
 
 const Sharing = () => {
   const { showToast } = useToast();
 
   // Date Range Filters
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    return getLocalDateString(new Date(d.getFullYear(), d.getMonth(), 1));
-  });
+  const [startDate, setStartDate] = useState(getLocalDateString());
   const [endDate, setEndDate] = useState(getLocalDateString());
   const [reportData, setReportData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -282,9 +278,9 @@ const Sharing = () => {
                   <thead>
                     <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                       <th className="p-3">Tanggal</th>
-                      <th className="p-3">No Invoice</th>
                       <th className="p-3">Lapak / Outlet</th>
                       <th className="p-3">Nama Pembeli</th>
+                      <th className="p-3 text-center">Qty</th>
                       <th className="p-3 text-right">Uang Masuk Ipang</th>
                       <th className="p-3 text-right">Harga Modal (HPP)</th>
                       <th className="p-3 text-right">Untung Bersih</th>
@@ -296,11 +292,11 @@ const Sharing = () => {
                       tx.details.forEach((d) => {
                         txHpp += (d.cogs || 0) * d.qty;
                       });
+                      const totalQty = tx.details.reduce((sum, d) => sum + d.qty, 0);
 
                       return (
                         <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text font-medium">
                           <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
-                          <td className="p-3 font-mono font-semibold text-brand-text-muted">{tx.invoiceNumber}</td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                               tx.lapakId === 1 ? 'bg-emerald-500/10 text-emerald-500' :
@@ -311,6 +307,7 @@ const Sharing = () => {
                             </span>
                           </td>
                           <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
+                          <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
                           <td className="p-3 text-right font-bold text-brand-text font-mono">{formatRupiah(tx.totalHakIpang)}</td>
                           <td className="p-3 text-right font-bold text-brand-text-muted font-mono">{formatRupiah(txHpp)}</td>
                           <td className="p-3 text-right font-bold text-brand-emerald font-mono bg-emerald-500/5">{formatRupiah(tx.totalHakIpang - txHpp)}</td>

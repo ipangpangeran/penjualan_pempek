@@ -23,11 +23,8 @@ import autoTable from 'jspdf-autotable';
 const Report = () => {
   const { showToast } = useToast();
 
-  // Filters
-  const [startDate, setStartDate] = useState(() => {
-    const d = new Date();
-    return getLocalDateString(new Date(d.getFullYear(), d.getMonth(), 1));
-  });
+  // Filters - Default start date to today
+  const [startDate, setStartDate] = useState(getLocalDateString());
   const [endDate, setEndDate] = useState(getLocalDateString());
   const [lapakId, setLapakId] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,13 +89,13 @@ const Report = () => {
   // Handle transaction delete
   const handleDeleteTx = async (txId, invoice) => {
     const confirmDelete = window.confirm(
-      `Apakah Anda yakin ingin menghapus transaksi ${invoice}? Tindakan ini permanen.`
+      `Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini permanen.`
     );
     if (!confirmDelete) return;
 
     try {
       await api.delete(`/sales/${txId}`);
-      showToast(`Transaksi ${invoice} berhasil dihapus.`, 'success');
+      showToast(`Transaksi berhasil dihapus.`, 'success');
       fetchReport();
       setIsDetailOpen(false);
     } catch (error) {
@@ -240,7 +237,6 @@ const Report = () => {
       const l1ExcelRows = directSales.flatMap((h) =>
         h.details.map((d) => ({
           Tanggal: formatDateIndo(h.saleDate),
-          Invoice: h.invoiceNumber,
           Pembeli: h.buyerName,
           Produk: d.product.name,
           Qty: d.qty,
@@ -259,7 +255,6 @@ const Report = () => {
       const resellerExcelRows = resellerSales.flatMap((h) =>
         h.details.map((d) => ({
           Tanggal: formatDateIndo(h.saleDate),
-          Invoice: h.invoiceNumber,
           Pembeli: h.buyerName,
           Lapak: h.lapakId === 2 ? 'Kang Asep PJP' : 'Kang Asep RDTX & GRHA',
           Produk: d.product.name,
@@ -491,14 +486,14 @@ const Report = () => {
             onClick={handleExportExcel}
             className="flex-1 md:flex-initial bg-brand-bg-input border border-brand-border hover:bg-brand-table-hover text-brand-text font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2"
           >
-            <FileSpreadsheet className="w-4 h-4 text-brand-emerald" />
+            <FileSpreadsheet className="w-4.5 h-4.5 text-brand-emerald" />
             <span>Excel</span>
           </button>
           <button
             onClick={handleExportPDF}
             className="flex-1 md:flex-initial bg-brand-bg-input border border-brand-border hover:bg-brand-table-hover text-brand-text font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2"
           >
-            <FileText className="w-4 h-4 text-rose-500" />
+            <FileText className="w-4.5 h-4.5 text-rose-500" />
             <span>PDF</span>
           </button>
         </div>
@@ -514,7 +509,7 @@ const Report = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari pembeli/invoice..."
+            placeholder="Cari pembeli..."
             className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2 pl-9 pr-4 text-xs focus:outline-none"
           />
         </div>
@@ -606,47 +601,50 @@ const Report = () => {
                     <thead>
                       <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                         <th className="p-3">Tanggal</th>
-                        <th className="p-3">No Invoice</th>
                         <th className="p-3">Nama Pembeli</th>
+                        <th className="p-3 text-center">Qty</th>
                         <th className="p-3 text-right">Total Transaksi</th>
                         <th className="p-3 text-center">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {l1Sales.map((tx) => (
-                        <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
-                          <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
-                          <td className="p-3 font-mono font-semibold text-brand-text-muted">{tx.invoiceNumber}</td>
-                          <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
-                          <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
-                          <td className="p-3 text-center flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => {
-                                setSelectedTx(tx);
-                                setIsDetailOpen(true);
-                              }}
-                              className="p-1 text-brand-text-muted hover:text-brand-emerald transition-colors"
-                              title="Lihat Detail"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => openEditModal(tx)}
-                              className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
-                              title="Edit Transaksi"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTx(tx.id, tx.invoiceNumber)}
-                              className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
-                              title="Hapus Transaksi"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {l1Sales.map((tx) => {
+                        const totalQty = tx.details.reduce((sum, d) => sum + d.qty, 0);
+                        return (
+                          <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
+                            <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
+                            <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
+                            <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
+                            <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
+                            <td className="p-3 text-center flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedTx(tx);
+                                  setIsDetailOpen(true);
+                                }}
+                                className="p-1 text-brand-text-muted hover:text-brand-emerald transition-colors"
+                                title="Lihat Detail"
+                              >
+                                <Eye className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => openEditModal(tx)}
+                                className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
+                                title="Edit Transaksi"
+                              >
+                                <Edit2 className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTx(tx.id, tx.invoiceNumber)}
+                                className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
+                                title="Hapus Transaksi"
+                              >
+                                <Trash2 className="w-4.5 h-4.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -673,8 +671,8 @@ const Report = () => {
                     <thead>
                       <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                         <th className="p-3">Tanggal</th>
-                        <th className="p-3">No Invoice</th>
                         <th className="p-3">Nama Pembeli</th>
+                        <th className="p-3 text-center">Qty</th>
                         <th className="p-3 text-right">Omzet Kotor (HET)</th>
                         <th className="p-3 text-right">Fee Reseller (7%)</th>
                         <th className="p-3 text-right">Hak Ipang (Bersih)</th>
@@ -682,42 +680,45 @@ const Report = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {l2Sales.map((tx) => (
-                        <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
-                          <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
-                          <td className="p-3 font-mono font-semibold text-brand-text-muted">{tx.invoiceNumber}</td>
-                          <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
-                          <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
-                          <td className="p-3 text-right font-semibold text-amber-500 bg-amber-500/5">{formatRupiah(tx.totalFee)}</td>
-                          <td className="p-3 text-right font-bold text-brand-emerald bg-emerald-500/5">{formatRupiah(tx.totalHakIpang)}</td>
-                          <td className="p-3 text-center flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => {
-                                setSelectedTx(tx);
-                                setIsDetailOpen(true);
-                              }}
-                              className="p-1 text-brand-text-muted hover:text-brand-emerald transition-colors"
-                              title="Lihat Detail"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => openEditModal(tx)}
-                              className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
-                              title="Edit Transaksi"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTx(tx.id, tx.invoiceNumber)}
-                              className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
-                              title="Hapus Transaksi"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {l2Sales.map((tx) => {
+                        const totalQty = tx.details.reduce((sum, d) => sum + d.qty, 0);
+                        return (
+                          <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
+                            <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
+                            <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
+                            <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
+                            <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
+                            <td className="p-3 text-right font-semibold text-amber-500 bg-amber-500/5">{formatRupiah(tx.totalFee)}</td>
+                            <td className="p-3 text-right font-bold text-brand-emerald bg-emerald-500/5">{formatRupiah(tx.totalHakIpang)}</td>
+                            <td className="p-3 text-center flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedTx(tx);
+                                  setIsDetailOpen(true);
+                                }}
+                                className="p-1 text-brand-text-muted hover:text-brand-emerald transition-colors"
+                                title="Lihat Detail"
+                              >
+                                <Eye className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => openEditModal(tx)}
+                                className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
+                                title="Edit Transaksi"
+                              >
+                                <Edit2 className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTx(tx.id, tx.invoiceNumber)}
+                                className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
+                                title="Hapus Transaksi"
+                              >
+                                <Trash2 className="w-4.5 h-4.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -744,8 +745,8 @@ const Report = () => {
                     <thead>
                       <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                         <th className="p-3">Tanggal</th>
-                        <th className="p-3">No Invoice</th>
                         <th className="p-3">Nama Pembeli</th>
+                        <th className="p-3 text-center">Qty</th>
                         <th className="p-3 text-right">Omzet Kotor (HET)</th>
                         <th className="p-3 text-right">Fee Reseller (7%)</th>
                         <th className="p-3 text-right">Hak Ipang (Bersih)</th>
@@ -753,42 +754,45 @@ const Report = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {l3Sales.map((tx) => (
-                        <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
-                          <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
-                          <td className="p-3 font-mono font-semibold text-brand-text-muted">{tx.invoiceNumber}</td>
-                          <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
-                          <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
-                          <td className="p-3 text-right font-semibold text-amber-500 bg-amber-500/5">{formatRupiah(tx.totalFee)}</td>
-                          <td className="p-3 text-right font-bold text-brand-emerald bg-emerald-500/5">{formatRupiah(tx.totalHakIpang)}</td>
-                          <td className="p-3 text-center flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => {
-                                setSelectedTx(tx);
-                                setIsDetailOpen(true);
-                              }}
-                              className="p-1 text-brand-text-muted hover:text-brand-emerald transition-colors"
-                              title="Lihat Detail"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => openEditModal(tx)}
-                              className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
-                              title="Edit Transaksi"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTx(tx.id, tx.invoiceNumber)}
-                              className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
-                              title="Hapus Transaksi"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                      {l3Sales.map((tx) => {
+                        const totalQty = tx.details.reduce((sum, d) => sum + d.qty, 0);
+                        return (
+                          <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
+                            <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
+                            <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
+                            <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
+                            <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
+                            <td className="p-3 text-right font-semibold text-amber-500 bg-amber-500/5">{formatRupiah(tx.totalFee)}</td>
+                            <td className="p-3 text-right font-bold text-brand-emerald bg-emerald-500/5">{formatRupiah(tx.totalHakIpang)}</td>
+                            <td className="p-3 text-center flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedTx(tx);
+                                  setIsDetailOpen(true);
+                                }}
+                                className="p-1 text-brand-text-muted hover:text-brand-emerald transition-colors"
+                                title="Lihat Detail"
+                              >
+                                <Eye className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => openEditModal(tx)}
+                                className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
+                                title="Edit Transaksi"
+                              >
+                                <Edit2 className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTx(tx.id, tx.invoiceNumber)}
+                                className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
+                                title="Hapus Transaksi"
+                              >
+                                <Trash2 className="w-4.5 h-4.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1043,7 +1047,7 @@ const Report = () => {
                             onClick={() => removeEditRow(index)}
                             className="text-brand-text-muted hover:text-rose-500"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4.5 h-4.5" />
                           </button>
                         </td>
                       </tr>
