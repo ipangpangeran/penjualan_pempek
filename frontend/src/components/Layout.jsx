@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Sun,
   Moon,
+  Coins,
 } from 'lucide-react';
 
 const Layout = ({ children, activePage, setActivePage }) => {
@@ -41,6 +42,7 @@ const Layout = ({ children, activePage, setActivePage }) => {
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'input-sales', name: 'Input Penjualan', icon: PlusCircle },
     { id: 'report', name: 'Laporan Penjualan', icon: FileText },
+    { id: 'sharing', name: 'Rekap Bagi Hasil', icon: Coins },
     { id: 'products', name: 'Master Produk', icon: Package },
     { id: 'settings', name: 'Pengaturan & DB', icon: Settings },
   ];

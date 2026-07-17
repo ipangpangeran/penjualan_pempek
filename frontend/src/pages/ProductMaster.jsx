@@ -29,6 +29,7 @@ const ProductMaster = () => {
 
   // Form states: New Product
   const [newName, setNewName] = useState('');
+  const [newCogs, setNewCogs] = useState(0);
   const [newPrices, setNewPrices] = useState({
     price1: 0,
     target2: 0,
@@ -39,6 +40,7 @@ const ProductMaster = () => {
 
   // Form states: Edit Product
   const [editName, setEditName] = useState('');
+  const [editCogs, setEditCogs] = useState(0);
   const [editPrices, setEditPrices] = useState({
     price1: 0,
     target2: 0,
@@ -87,6 +89,7 @@ const ProductMaster = () => {
     try {
       await api.post('/products', {
         name: newName,
+        cogs: newCogs,
         prices: [
           { lapakId: 1, price: newPrices.price1, target: 0, het: 0 },
           { lapakId: 2, price: 0, target: newPrices.target2, het: newPrices.het2 },
@@ -97,6 +100,7 @@ const ProductMaster = () => {
       showToast('Produk baru berhasil ditambahkan.', 'success');
       setIsAddOpen(false);
       setNewName('');
+      setNewCogs(0);
       setNewPrices({ price1: 0, target2: 0, het2: 0, target3: 0, het3: 0 });
       fetchProducts();
     } catch (error) {
@@ -108,6 +112,7 @@ const ProductMaster = () => {
   const openEditModal = (product) => {
     setEditingProduct(product);
     setEditName(product.name);
+    setEditCogs(product.cogs || 0);
 
     // Map existing pricing config
     const price1 = product.prices?.find((p) => p.lapakId === 1)?.price || 0;
@@ -131,6 +136,7 @@ const ProductMaster = () => {
     try {
       await api.put(`/products/${editingProduct.id}`, {
         name: editName,
+        cogs: editCogs,
         prices: [
           { lapakId: 1, price: editPrices.price1, target: 0, het: 0 },
           { lapakId: 2, price: 0, target: editPrices.target2, het: editPrices.het2 },
@@ -208,6 +214,7 @@ const ProductMaster = () => {
                 <thead>
                   <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                     <th className="p-3">Nama Produk</th>
+                    <th className="p-3 text-right">Modal (HPP / Asli)</th>
                     <th className="p-3 text-right">Harga Lapak 1</th>
                     <th className="p-3 text-right">Lapak 2 (Target/HET)</th>
                     <th className="p-3 text-right">Lapak 3 (Target/HET)</th>
@@ -230,6 +237,9 @@ const ProductMaster = () => {
                             <div className={`w-2.5 h-2.5 rounded-full ${p.isActive ? 'bg-emerald-500' : 'bg-slate-500'}`} />
                             <span className="font-semibold text-brand-text">{p.name}</span>
                           </div>
+                        </td>
+                        <td className="p-3 text-right font-bold text-brand-emerald bg-emerald-500/5">
+                          {formatRupiah(p.cogs || 0)}
                         </td>
                         <td className="p-3 text-right font-semibold text-brand-text">
                           {formatRupiah(price1)}
@@ -276,17 +286,31 @@ const ProductMaster = () => {
       {/* MODAL: ADD PRODUCT */}
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Tambah Produk Baru" size="lg">
         <form onSubmit={handleAddSubmit} className="space-y-6">
-          {/* Product Name */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-brand-text-muted block">Nama Produk</label>
-            <input
-              type="text"
-              required
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Contoh: Pempek Lenjer"
-              className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none"
-            />
+          {/* Product Name & COGS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-brand-text-muted block">Nama Produk</label>
+              <input
+                type="text"
+                required
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Contoh: Pempek Lenjer"
+                className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-brand-text-muted block">Harga Modal (HPP / Asli)</label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={newCogs}
+                onChange={(e) => setNewCogs(parseInt(e.target.value) || 0)}
+                placeholder="Contoh: 23000"
+                className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none font-bold"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -391,16 +415,29 @@ const ProductMaster = () => {
       {/* MODAL: EDIT PRODUCT */}
       <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Produk & Harga" size="lg">
         <form onSubmit={handleEditSubmit} className="space-y-6">
-          {/* Edit Product Name */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-brand-text-muted block">Nama Produk</label>
-            <input
-              type="text"
-              required
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none"
-            />
+          {/* Edit Product Name & COGS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-brand-text-muted block">Nama Produk</label>
+              <input
+                type="text"
+                required
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-brand-text-muted block">Harga Modal (HPP / Asli)</label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={editCogs}
+                onChange={(e) => setEditCogs(parseInt(e.target.value) || 0)}
+                className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none font-bold"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

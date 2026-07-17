@@ -19,18 +19,18 @@ export const getDashboardSummary = async (req, res) => {
     // 1. Today stats
     const todayAgg = await prisma.salesHeader.aggregate({
       where: { saleDate: { gte: todayStart, lte: todayEnd } },
-      _sum: { totalAmount: true, totalHakIpang: true, totalFee: true },
+      _sum: { totalAmount: true, totalHakIpang: true, totalFee: true, totalProfit: true },
     });
 
     // 2. Month stats
     const monthAgg = await prisma.salesHeader.aggregate({
       where: { saleDate: { gte: firstDayMonth } },
-      _sum: { totalAmount: true, totalHakIpang: true, totalFee: true },
+      _sum: { totalAmount: true, totalHakIpang: true, totalFee: true, totalProfit: true },
     });
 
     // 3. Overall stats
     const overallAgg = await prisma.salesHeader.aggregate({
-      _sum: { totalAmount: true, totalHakIpang: true, totalFee: true },
+      _sum: { totalAmount: true, totalHakIpang: true, totalFee: true, totalProfit: true },
     });
 
     // 4. Top products by volume
@@ -86,16 +86,19 @@ export const getDashboardSummary = async (req, res) => {
         omzet: todayAgg._sum.totalAmount || 0,
         hakIpang: todayAgg._sum.totalHakIpang || 0,
         fee: todayAgg._sum.totalFee || 0,
+        profit: todayAgg._sum.totalProfit || 0,
       },
       month: {
         omzet: monthAgg._sum.totalAmount || 0,
         hakIpang: monthAgg._sum.totalHakIpang || 0,
         fee: monthAgg._sum.totalFee || 0,
+        profit: monthAgg._sum.totalProfit || 0,
       },
       overall: {
         omzet: overallAgg._sum.totalAmount || 0,
         hakIpang: overallAgg._sum.totalHakIpang || 0,
         fee: overallAgg._sum.totalFee || 0,
+        profit: overallAgg._sum.totalProfit || 0,
         topProduct: topProductName,
       },
       topSellingProducts,
@@ -154,6 +157,7 @@ export const queryReport = async (req, res) => {
     let totalOmzet = 0;
     let totalHakIpang = 0;
     let totalFee = 0;
+    let totalProfit = 0;
     let totalQty = 0;
     const productQtyMap = {};
 
@@ -161,6 +165,7 @@ export const queryReport = async (req, res) => {
       totalOmzet += h.totalAmount;
       totalHakIpang += h.totalHakIpang;
       totalFee += h.totalFee;
+      totalProfit += h.totalProfit;
 
       h.details.forEach((d) => {
         totalQty += d.qty;
@@ -190,6 +195,7 @@ export const queryReport = async (req, res) => {
         totalOmzet,
         totalHakIpang,
         totalFee,
+        totalProfit,
         totalQty,
         topProduct,
       },

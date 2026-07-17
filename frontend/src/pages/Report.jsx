@@ -226,8 +226,9 @@ const Report = () => {
       { Parameter: 'Filter Outlet/Lapak', Nilai: lapakId === 'all' ? 'Semua Lapak' : lapakId === 1 ? 'Lapak Ipang' : lapakId === 2 ? 'Kang Asep PJP' : 'Kang Asep RDTX' },
       { Parameter: '', Nilai: '' },
       { Parameter: 'Total Omzet (Kotor)', Nilai: summary.totalOmzet },
-      { Parameter: 'Total Hak Ipang (Bersih)', Nilai: summary.totalHakIpang },
+      { Parameter: 'Total Hak Ipang (Kotor)', Nilai: summary.totalHakIpang },
       { Parameter: 'Total Fee Reseller (Kang Asep)', Nilai: summary.totalFee },
+      { Parameter: 'Total Untung Bersih (Profit)', Nilai: summary.totalProfit },
       { Parameter: 'Jumlah Total Qty Terjual', Nilai: `${summary.totalQty} pcs` },
       { Parameter: 'Produk Terlaris', Nilai: summary.topProduct },
     ];
@@ -243,7 +244,9 @@ const Report = () => {
           Pembeli: h.buyerName,
           Produk: d.product.name,
           Qty: d.qty,
+          'Harga Modal (HPP)': d.cogs,
           'Harga Satuan': d.price,
+          Untung: d.profit,
           Subtotal: d.subtotal,
         }))
       );
@@ -261,9 +264,11 @@ const Report = () => {
           Lapak: h.lapakId === 2 ? 'Kang Asep PJP' : 'Kang Asep RDTX & GRHA',
           Produk: d.product.name,
           Qty: d.qty,
-          'Target Masuk (Hak Ipang)': d.target,
+          'Harga Modal (HPP)': d.cogs,
+          'Target Masuk': d.target,
           'HET (Omzet)': d.het,
           'Fee Reseller (7%)': d.fee,
+          Untung: d.profit,
           'Subtotal Hak Ipang': d.hakIpang,
           'Subtotal Omzet': d.omzet,
         }))
@@ -306,8 +311,9 @@ const Report = () => {
     // Summary table layout
     const summaryBody = [
       ['Total Omzet (Kotor)', formatRupiah(summary.totalOmzet)],
-      ['Total Hak Ipang (Bersih)', formatRupiah(summary.totalHakIpang)],
+      ['Total Hak Ipang (Kotor)', formatRupiah(summary.totalHakIpang)],
       ['Total Fee Reseller (Kang Asep)', formatRupiah(summary.totalFee)],
+      ['Total Untung Bersih (Profit)', formatRupiah(summary.totalProfit)],
       ['Jumlah Total Qty Terjual', `${summary.totalQty} pcs`],
       ['Produk Terlaris', summary.topProduct],
     ];
@@ -337,13 +343,15 @@ const Report = () => {
           d.product.name,
           d.qty,
           formatRupiah(d.price),
+          formatRupiah(d.cogs),
+          formatRupiah(d.profit),
           formatRupiah(d.subtotal),
         ])
       );
 
       autoTable(doc, {
         startY: currentY + 4,
-        head: [['Tanggal', 'Pembeli', 'Produk', 'Qty', 'Harga', 'Subtotal']],
+        head: [['Tanggal', 'Pembeli', 'Produk', 'Qty', 'Harga', 'Modal HPP', 'Untung', 'Subtotal']],
         body: l1Rows,
         theme: 'striped',
         headStyles: { fillColor: [15, 23, 42] }, // dark navy
@@ -376,13 +384,14 @@ const Report = () => {
           formatRupiah(d.target),
           formatRupiah(d.het),
           formatRupiah(d.fee),
-          formatRupiah(d.hakIpang),
+          formatRupiah(d.cogs),
+          formatRupiah(d.profit),
         ])
       );
 
       autoTable(doc, {
         startY: currentY + 4,
-        head: [['Tanggal', 'Pembeli', 'Lapak', 'Produk', 'Qty', 'Target', 'HET', 'Fee (7%)', 'Hak Ipang']],
+        head: [['Tanggal', 'Pembeli', 'Lapak', 'Produk', 'Qty', 'Target', 'HET', 'Fee (7%)', 'Modal HPP', 'Untung']],
         body: resellerRows,
         theme: 'striped',
         headStyles: { fillColor: [15, 23, 42] },
@@ -394,10 +403,11 @@ const Report = () => {
     showToast('Laporan PDF berhasil diunduh.', 'success');
   };
 
-  const summary = reportData?.summary || {
+  const reportSummary = reportData?.summary || {
     totalOmzet: 0,
     totalHakIpang: 0,
     totalFee: 0,
+    totalProfit: 0,
     totalQty: 0,
     topProduct: '-',
   };
@@ -517,44 +527,52 @@ const Report = () => {
       </form>
 
       {/* Summary Aggregate Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Total Omzet */}
         <div className="bg-brand-card p-4 rounded-2xl border border-brand-border shadow-sm">
           <span className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider block">Omzet Kotor</span>
-          <span className="text-sm font-black text-brand-text tracking-tight mt-1 block">
-            {formatRupiah(summary.totalOmzet)}
+          <span className="text-xs font-black text-brand-text tracking-tight mt-1 block">
+            {formatRupiah(reportSummary.totalOmzet)}
           </span>
         </div>
 
         {/* Hak Ipang */}
-        <div className="bg-brand-card p-4 rounded-2xl border border-brand-emerald/20 bg-brand-emerald/5 shadow-sm">
-          <span className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider block">Hak Ipang (Bersih)</span>
-          <span className="text-sm font-black text-brand-emerald tracking-tight mt-1 block">
-            {formatRupiah(summary.totalHakIpang)}
+        <div className="bg-brand-card p-4 rounded-2xl border border-brand-border shadow-sm">
+          <span className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider block">Hak Ipang (Kotor)</span>
+          <span className="text-xs font-black text-brand-text tracking-tight mt-1 block">
+            {formatRupiah(reportSummary.totalHakIpang)}
           </span>
         </div>
 
         {/* Reseller Fee */}
         <div className="bg-brand-card p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5 shadow-sm">
           <span className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider block">Fee Kang Asep (7%)</span>
-          <span className="text-sm font-black text-amber-500 tracking-tight mt-1 block">
-            {formatRupiah(summary.totalFee)}
+          <span className="text-xs font-black text-amber-500 tracking-tight mt-1 block">
+            {formatRupiah(reportSummary.totalFee)}
+          </span>
+        </div>
+
+        {/* Total Profit */}
+        <div className="bg-brand-card p-4 rounded-2xl border border-brand-emerald/20 bg-brand-emerald/5 shadow-sm">
+          <span className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider block">Untung Bersih (Net)</span>
+          <span className="text-xs font-black text-brand-emerald tracking-tight mt-1 block animate-transition">
+            {formatRupiah(reportSummary.totalProfit)}
           </span>
         </div>
 
         {/* Total Qty */}
         <div className="bg-brand-card p-4 rounded-2xl border border-brand-border shadow-sm">
           <span className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider block">Qty Terjual</span>
-          <span className="text-sm font-black text-brand-text tracking-tight mt-1 block">
-            {summary.totalQty} pcs
+          <span className="text-xs font-black text-brand-text tracking-tight mt-1 block">
+            {reportSummary.totalQty} pcs
           </span>
         </div>
 
         {/* Top Product */}
-        <div className="bg-brand-card p-4 rounded-2xl border border-brand-border shadow-sm col-span-2 md:col-span-1">
+        <div className="bg-brand-card p-4 rounded-2xl border border-brand-border shadow-sm">
           <span className="text-[9px] font-bold text-brand-text-muted uppercase tracking-wider block">Lapak Terlaris</span>
-          <span className="text-sm font-bold text-brand-text tracking-tight mt-1 block truncate">
-            {summary.topProduct}
+          <span className="text-xs font-bold text-brand-text tracking-tight mt-1 block truncate">
+            {reportSummary.topProduct}
           </span>
         </div>
       </div>
@@ -784,7 +802,7 @@ const Report = () => {
       <Modal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} title="Detail Transaksi Penjualan" size="lg">
         {selectedTx && (
           <div className="space-y-6 text-brand-text">
-            <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-2 gap-4 text-xs font-medium">
               <div>
                 <span className="text-brand-text-muted font-semibold block uppercase">Nama Pembeli</span>
                 <span className="text-brand-text font-bold mt-0.5 block">{selectedTx.buyerName}</span>
@@ -803,15 +821,17 @@ const Report = () => {
               </div>
             </div>
 
-            <div className="border border-brand-border rounded-2xl overflow-hidden">
-              <table className="w-full text-left border-collapse text-xs">
+            <div className="border border-brand-border rounded-2xl overflow-hidden overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
                   <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                     <th className="p-3">Produk</th>
                     <th className="p-3 text-center">Qty</th>
                     {selectedTx.lapakId === 1 ? (
                       <>
-                        <th className="p-3 text-right">Harga</th>
+                        <th className="p-3 text-right">Harga Jual</th>
+                        <th className="p-3 text-right">Modal (HPP)</th>
+                        <th className="p-3 text-right">Untung Bersih</th>
                         <th className="p-3 text-right">Subtotal</th>
                       </>
                     ) : (
@@ -820,6 +840,8 @@ const Report = () => {
                         <th className="p-3 text-right">HET</th>
                         <th className="p-3 text-right">Fee (7%)</th>
                         <th className="p-3 text-right">Hak Ipang</th>
+                        <th className="p-3 text-right">Modal (HPP)</th>
+                        <th className="p-3 text-right">Untung Bersih</th>
                         <th className="p-3 text-right">Omzet Kotor</th>
                       </>
                     )}
@@ -828,19 +850,23 @@ const Report = () => {
                 <tbody>
                   {selectedTx.details.map((d) => (
                     <tr key={d.id} className="border-b border-brand-border text-brand-text">
-                      <td className="p-3 font-semibold text-brand-text">{d.product.name}</td>
+                      <td className="p-3 font-semibold text-brand-text">{d.product?.name}</td>
                       <td className="p-3 text-center">{d.qty} pcs</td>
                       {selectedTx.lapakId === 1 ? (
                         <>
                           <td className="p-3 text-right text-brand-text-muted">{formatRupiah(d.price)}</td>
-                          <td className="p-3 text-right font-bold text-brand-text">{formatRupiah(d.subtotal)}</td>
+                          <td className="p-3 text-right text-brand-text-muted font-mono">{formatRupiah(d.cogs || 0)}</td>
+                          <td className="p-3 text-right text-brand-emerald font-bold font-mono">{formatRupiah(d.profit || 0)}</td>
+                          <td className="p-3 text-right font-black text-brand-text">{formatRupiah(d.subtotal)}</td>
                         </>
                       ) : (
                         <>
-                          <td className="p-3 text-right text-brand-text-muted">{formatRupiah(d.target)}</td>
-                          <td className="p-3 text-right text-brand-text-muted">{formatRupiah(d.het)}</td>
+                          <td className="p-3 text-right text-brand-text-muted font-mono">{formatRupiah(d.target)}</td>
+                          <td className="p-3 text-right text-brand-text-muted font-mono">{formatRupiah(d.het)}</td>
                           <td className="p-3 text-right text-amber-500 font-semibold">{formatRupiah(d.fee)}</td>
-                          <td className="p-3 text-right text-brand-emerald font-bold">{formatRupiah(d.hakIpang)}</td>
+                          <td className="p-3 text-right text-brand-emerald font-semibold">{formatRupiah(d.hakIpang)}</td>
+                          <td className="p-3 text-right text-brand-text-muted font-mono">{formatRupiah(d.cogs || 0)}</td>
+                          <td className="p-3 text-right text-brand-emerald font-bold font-mono bg-emerald-500/5">{formatRupiah(d.profit || 0)}</td>
                           <td className="p-3 text-right font-black text-brand-text">{formatRupiah(d.omzet)}</td>
                         </>
                       )}
@@ -851,22 +877,28 @@ const Report = () => {
             </div>
 
             {/* Overall Totals breakdown inside detail modal */}
-            {selectedTx.lapakId !== 1 && (
-              <div className="grid grid-cols-3 gap-2 bg-brand-bg-input border border-brand-border p-4 rounded-xl text-center">
-                <div>
-                  <span className="text-[9px] font-bold text-brand-text-muted block uppercase">Total Omzet HET</span>
-                  <span className="text-xs font-black text-brand-text block mt-0.5">{formatRupiah(selectedTx.totalAmount)}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-brand-text-muted block uppercase">Fee Reseller (7%)</span>
-                  <span className="text-xs font-bold text-amber-500 block mt-0.5">{formatRupiah(selectedTx.totalFee)}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-brand-text-muted block uppercase">Hak Ipang (Net)</span>
-                  <span className="text-xs font-bold text-brand-emerald block mt-0.5">{formatRupiah(selectedTx.totalHakIpang)}</span>
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-brand-bg-input border border-brand-border p-4 rounded-xl text-center">
+              <div>
+                <span className="text-[9px] font-bold text-brand-text-muted block uppercase">Total Omzet</span>
+                <span className="text-xs font-extrabold text-brand-text block mt-0.5">{formatRupiah(selectedTx.totalAmount)}</span>
               </div>
-            )}
+              {selectedTx.lapakId !== 1 && (
+                <>
+                  <div>
+                    <span className="text-[9px] font-bold text-brand-text-muted block uppercase">Fee Reseller (7%)</span>
+                    <span className="text-xs font-bold text-amber-500 block mt-0.5">{formatRupiah(selectedTx.totalFee)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-brand-text-muted block uppercase">Hak Ipang</span>
+                    <span className="text-xs font-bold text-brand-emerald block mt-0.5">{formatRupiah(selectedTx.totalHakIpang)}</span>
+                  </div>
+                </>
+              )}
+              <div className="bg-brand-emerald/10 border border-brand-emerald/20 rounded-lg py-1.5 col-span-2 md:col-span-1">
+                <span className="text-[9px] font-black text-brand-emerald block uppercase">Untung Bersih</span>
+                <span className="text-xs font-black text-brand-emerald block mt-0.5">{formatRupiah(selectedTx.totalProfit || 0)}</span>
+              </div>
+            </div>
 
             {/* Modal Footer Controls */}
             <div className="flex justify-end gap-2 pt-4 border-t border-brand-border">
@@ -938,8 +970,8 @@ const Report = () => {
                 </button>
               </div>
 
-              <div className="border border-brand-border rounded-2xl overflow-hidden">
-                <table className="w-full text-left border-collapse text-xs">
+              <div className="border border-brand-border rounded-2xl overflow-hidden overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
                   <thead>
                     <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                       <th className="p-3">Produk</th>
@@ -968,7 +1000,7 @@ const Report = () => {
                           <select
                             value={item.productId}
                             onChange={(e) => handleEditRowChange(index, 'productId', e.target.value)}
-                            className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-1.5 text-xs focus:outline-none"
+                            className="w-full min-w-[150px] bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-1.5 text-xs focus:outline-none"
                           >
                             <option value="">-- Pilih Produk --</option>
                             {allProducts.map((p) => (
@@ -1030,7 +1062,7 @@ const Report = () => {
                     {formatRupiah(editTotals.omzet)}
                   </span>
                 ) : (
-                  <div className="flex gap-4 text-xs font-semibold text-brand-text-muted">
+                  <div className="flex gap-4 text-xs font-semibold text-brand-text-muted font-mono">
                     <span>Omzet HET: <span className="text-brand-text font-bold">{formatRupiah(editTotals.omzet)}</span></span>
                     <span>Fee: <span className="text-amber-500 font-bold">{formatRupiah(editTotals.fee)}</span></span>
                     <span>Hak Ipang: <span className="text-brand-emerald font-bold">{formatRupiah(editTotals.hakIpang)}</span></span>

@@ -8,6 +8,7 @@ import InputSales from './pages/InputSales';
 import Report from './pages/Report';
 import ProductMaster from './pages/ProductMaster';
 import Settings from './pages/Settings';
+import Sharing from './pages/Sharing';
 
 const AppContent = () => {
   const { user, loading } = useAuth();
@@ -60,6 +61,8 @@ const AppContent = () => {
         return <ProductMaster />;
       case 'settings':
         return <Settings />;
+      case 'sharing':
+        return <Sharing />;
       default:
         return <Dashboard setActivePage={setActivePage} />;
     }

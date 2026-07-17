@@ -18,6 +18,7 @@ model User {
 model Product {
   id           Int           @id @default(autoincrement())
   name         String        @unique
+  cogs         Float         @default(0) // Cost of Goods Sold (Harga Asli / Modal)
   isActive     Boolean       @default(true)
   prices       LapakPrice[]
   salesDetails SalesDetail[]
@@ -48,6 +49,7 @@ model SalesHeader {
   totalAmount   Float         // Total Omzet (HET * Qty or price * Qty)
   totalHakIpang Float         // Clean revenue (Target * Qty or price * Qty)
   totalFee      Float         // Reseller fee (7% of HET)
+  totalProfit   Float         // Net Profit (totalHakIpang - totalCogs)
   details       SalesDetail[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -64,6 +66,8 @@ model SalesDetail {
   fee           Float       // Reseller fee
   hakIpang      Float       // Hak Ipang
   omzet         Float       // Omzet
+  cogs          Float       // Cost of Goods Sold (Harga Asli) at time of sale
+  profit        Float       // Net Profit for this item (hakIpang - cogs * qty)
   subtotal      Float       // price * qty
   salesHeader   SalesHeader @relation(fields: [salesHeaderId], references: [id], onDelete: Cascade)
   product       Product     @relation(fields: [productId], references: [id])

@@ -40,7 +40,7 @@ export const getActiveProducts = async (req, res) => {
 
 // Create a new product and initialize pricing rows
 export const createProduct = async (req, res) => {
-  const { name, prices } = req.body; // prices is array: [{lapakId, price, target, het}]
+  const { name, cogs, prices } = req.body; // prices is array: [{lapakId, price, target, het}]
 
   if (!name) {
     return res.status(400).json({ message: 'Nama produk harus diisi.' });
@@ -56,6 +56,7 @@ export const createProduct = async (req, res) => {
     const newProduct = await prisma.product.create({
       data: {
         name,
+        cogs: Number(cogs) || 0,
         isActive: true,
       },
     });
@@ -106,7 +107,7 @@ export const createProduct = async (req, res) => {
 // Update product name and pricing
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, prices } = req.body;
+  const { name, cogs, prices } = req.body;
 
   if (!name) {
     return res.status(400).json({ message: 'Nama produk harus diisi.' });
@@ -127,10 +128,13 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    // Update product name
+    // Update product name and cogs
     await prisma.product.update({
       where: { id: productId },
-      data: { name },
+      data: {
+        name,
+        cogs: Number(cogs) || 0,
+      },
     });
 
     // Update prices if provided

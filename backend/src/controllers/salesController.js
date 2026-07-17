@@ -48,6 +48,7 @@ export const createSale = async (req, res) => {
     let totalAmount = 0; // Omzet kotor
     let totalHakIpang = 0; // Bersih untuk Ipang
     let totalFee = 0; // Fee sharing
+    let totalProfit = 0; // Untung bersih
     const detailsData = [];
 
     // Fetch fee settings (7%)
@@ -68,6 +69,7 @@ export const createSale = async (req, res) => {
       }
 
       const priceRecord = product.prices[0] || {};
+      const cogs = product.cogs || 0;
       
       let price = 0;
       let target = 0;
@@ -94,9 +96,13 @@ export const createSale = async (req, res) => {
         omzet = het * qty;
       }
 
+      // Net profit = Hak Ipang - (Harga Modal * Qty)
+      const profit = hakIpang - (cogs * qty);
+
       totalAmount += omzet;
       totalHakIpang += hakIpang;
       totalFee += fee;
+      totalProfit += profit;
 
       detailsData.push({
         productId: product.id,
@@ -107,6 +113,8 @@ export const createSale = async (req, res) => {
         fee,
         hakIpang,
         omzet,
+        cogs,
+        profit,
         subtotal: price * qty, // equals omzet
       });
     }
@@ -126,6 +134,7 @@ export const createSale = async (req, res) => {
           totalAmount,
           totalHakIpang,
           totalFee,
+          totalProfit,
           details: {
             create: detailsData.map((d) => ({
               productId: d.productId,
@@ -136,6 +145,8 @@ export const createSale = async (req, res) => {
               fee: d.fee,
               hakIpang: d.hakIpang,
               omzet: d.omzet,
+              cogs: d.cogs,
+              profit: d.profit,
               subtotal: d.subtotal,
             })),
           },
@@ -151,7 +162,7 @@ export const createSale = async (req, res) => {
     await logAuditAction(
       req.user.username,
       'CREATE_SALE',
-      `Input penjualan ${lapakNames[targetLapakId]}. Invoice: ${invoiceNumber}, Pembeli/Reseller: ${buyerName}, Omzet: Rp ${totalAmount.toLocaleString('id-ID')}`
+      `Input penjualan ${lapakNames[targetLapakId]}. Invoice: ${invoiceNumber}, Pembeli: ${buyerName}, Untung Bersih: Rp ${totalProfit.toLocaleString('id-ID')}`
     );
 
     return res.status(201).json({
@@ -186,6 +197,7 @@ export const updateSale = async (req, res) => {
     let totalAmount = 0;
     let totalHakIpang = 0;
     let totalFee = 0;
+    let totalProfit = 0;
     const detailsData = [];
 
     // Fetch fee settings (7%)
@@ -206,6 +218,7 @@ export const updateSale = async (req, res) => {
       }
 
       const priceRecord = product.prices[0] || {};
+      const cogs = product.cogs || 0;
       
       let price = 0;
       let target = 0;
@@ -230,9 +243,13 @@ export const updateSale = async (req, res) => {
         omzet = het * qty;
       }
 
+      // Net profit
+      const profit = hakIpang - (cogs * qty);
+
       totalAmount += omzet;
       totalHakIpang += hakIpang;
       totalFee += fee;
+      totalProfit += profit;
 
       detailsData.push({
         productId: product.id,
@@ -243,6 +260,8 @@ export const updateSale = async (req, res) => {
         fee,
         hakIpang,
         omzet,
+        cogs,
+        profit,
         subtotal: price * qty,
       });
     }
@@ -265,6 +284,7 @@ export const updateSale = async (req, res) => {
           totalAmount,
           totalHakIpang,
           totalFee,
+          totalProfit,
           details: {
             create: detailsData.map((d) => ({
               productId: d.productId,
@@ -275,6 +295,8 @@ export const updateSale = async (req, res) => {
               fee: d.fee,
               hakIpang: d.hakIpang,
               omzet: d.omzet,
+              cogs: d.cogs,
+              profit: d.profit,
               subtotal: d.subtotal,
             })),
           },
@@ -290,7 +312,7 @@ export const updateSale = async (req, res) => {
     await logAuditAction(
       req.user.username,
       'UPDATE_SALE',
-      `Edit penjualan ${lapakNames[targetLapakId]}. Invoice: ${existing.invoiceNumber}, Pembeli/Reseller: ${buyerName}, Omzet: Rp ${totalAmount.toLocaleString('id-ID')}`
+      `Edit penjualan ${lapakNames[targetLapakId]}. Invoice: ${existing.invoiceNumber}, Pembeli: ${buyerName}, Untung Bersih: Rp ${totalProfit.toLocaleString('id-ID')}`
     );
 
     return res.status(200).json({
@@ -319,7 +341,7 @@ export const deleteSale = async (req, res) => {
     await logAuditAction(
       req.user.username,
       'DELETE_SALE',
-      `Hapus penjualan ${lapakNames[sale.lapakId]}. Invoice: ${sale.invoiceNumber}, Pembeli/Reseller: ${sale.buyerName}`
+      `Hapus penjualan ${lapakNames[sale.lapakId]}. Invoice: ${sale.invoiceNumber}, Pembeli: ${sale.buyerName}`
     );
 
     return res.status(200).json({ message: 'Transaksi penjualan berhasil dihapus.' });
