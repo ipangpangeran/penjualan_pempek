@@ -289,16 +289,8 @@ const InputSales = () => {
 
           {/* Items Table */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pb-1">
               <h4 className="text-xs font-bold text-brand-text">Daftar Belanja</h4>
-              <button
-                type="button"
-                onClick={addRow}
-                className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 hover:text-emerald-400 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Tambah Baris</span>
-              </button>
             </div>
 
             <div className="border border-brand-border rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
@@ -381,6 +373,18 @@ const InputSales = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* Tambah Baris Button below table */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={addRow}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 hover:text-emerald-450 active:text-emerald-600 transition-colors bg-brand-bg-input hover:bg-brand-table-hover/40 border border-brand-border/65 py-2 px-4 rounded-xl shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Tambah Baris</span>
+              </button>
             </div>
           </div>
 
