@@ -186,8 +186,8 @@ export const queryReport = async (req, res) => {
       }
     });
 
-    // Separate direct (Lapak 1) vs reseller (Lapak 2 & 3)
-    const directSales = sales.filter((s) => s.lapakId === 1);
+    // Separate direct (Lapak 1 & 4) vs reseller (Lapak 2 & 3)
+    const directSales = sales.filter((s) => s.lapakId === 1 || s.lapakId === 4);
     const resellerSales = sales.filter((s) => s.lapakId === 2 || s.lapakId === 3);
 
     return res.status(200).json({

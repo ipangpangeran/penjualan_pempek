@@ -61,9 +61,10 @@ export const createProduct = async (req, res) => {
       },
     });
 
-    // Create price records for lapak 1, 2, 3
+    // Create price records for lapak 1, 2, 3, 4
     const defaultPrices = [
       { lapakId: 1, price: 0, target: 0, het: 0 },
+      { lapakId: 4, price: 0, target: 0, het: 0 },
       { lapakId: 2, price: 0, target: 0, het: 0 },
       { lapakId: 3, price: 0, target: 0, het: 0 },
     ];
@@ -204,5 +205,49 @@ export const toggleProductStatus = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};
+
+// Delete product (only if it has no sales history to maintain integrity)
+export const deleteProduct = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const productId = parseInt(id);
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      return res.status(404).json({ message: 'Produk tidak ditemukan.' });
+    }
+
+    // Check if product has sales details
+    const hasSales = await prisma.salesDetail.findFirst({
+      where: { productId },
+    });
+
+    if (hasSales) {
+      return res.status(400).json({
+        message: 'Produk tidak bisa dihapus karena memiliki riwayat penjualan. Silakan nonaktifkan (Deactivate) statusnya saja.',
+      });
+    }
+
+    // Delete associated lapak prices first
+    await prisma.lapakPrice.deleteMany({
+      where: { productId },
+    });
+
+    // Delete product
+    await prisma.product.delete({
+      where: { id: productId },
+    });
+
+    await logAuditAction(
+      req.user.username,
+      'DELETE_PRODUCT',
+      `Menghapus produk: ${product.name}`
+    );
+
+    return res.status(200).json({ message: 'Produk berhasil dihapus.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server saat menghapus produk.' });
   }
 };

@@ -26,7 +26,7 @@ async function main() {
   });
 
   // Define products list, HPP (cogs) and pricing across lapaks
-  // lapakId: 1 = Lapak Ipang, 2 = Kang Asep PJP, 3 = Kang Asep RDTX & GRHA
+  // lapakId: 1 = Lapak Ipang, 2 = Kang Asep PJP, 3 = Kang Asep RDTX & GRHA, 4 = Lapak Zahra
   const productsData = [
     {
       name: 'Mix isi 50',
@@ -35,6 +35,7 @@ async function main() {
         { lapakId: 1, price: 105000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 107000, het: 115000 },
         { lapakId: 3, price: 0, target: 107000, het: 130000 },
+        { lapakId: 4, price: 107000, target: 0, het: 0 },
       ],
     },
     {
@@ -44,6 +45,7 @@ async function main() {
         { lapakId: 1, price: 55000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 57000, het: 62000 },
         { lapakId: 3, price: 0, target: 57000, het: 65000 },
+        { lapakId: 4, price: 57000, target: 0, het: 0 },
       ],
     },
     {
@@ -53,6 +55,7 @@ async function main() {
         { lapakId: 1, price: 28000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 30000, het: 33000 },
         { lapakId: 3, price: 0, target: 30000, het: 35000 },
+        { lapakId: 4, price: 30000, target: 0, het: 0 },
       ],
     },
     {
@@ -62,6 +65,7 @@ async function main() {
         { lapakId: 1, price: 28000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 30000, het: 33000 },
         { lapakId: 3, price: 0, target: 30000, het: 35000 },
+        { lapakId: 4, price: 30000, target: 0, het: 0 },
       ],
     },
     {
@@ -71,6 +75,7 @@ async function main() {
         { lapakId: 1, price: 28000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 30000, het: 33000 },
         { lapakId: 3, price: 0, target: 30000, het: 35000 },
+        { lapakId: 4, price: 30000, target: 0, het: 0 },
       ],
     },
     {
@@ -80,6 +85,7 @@ async function main() {
         { lapakId: 1, price: 28000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 30000, het: 33000 },
         { lapakId: 3, price: 0, target: 30000, het: 35000 },
+        { lapakId: 4, price: 30000, target: 0, het: 0 },
       ],
     },
     {
@@ -89,6 +95,7 @@ async function main() {
         { lapakId: 1, price: 28000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 30000, het: 33000 },
         { lapakId: 3, price: 0, target: 30000, het: 35000 },
+        { lapakId: 4, price: 30000, target: 0, het: 0 },
       ],
     },
     {
@@ -98,6 +105,7 @@ async function main() {
         { lapakId: 1, price: 28000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 30000, het: 33000 },
         { lapakId: 3, price: 0, target: 30000, het: 35000 },
+        { lapakId: 4, price: 30000, target: 0, het: 0 },
       ],
     },
     {
@@ -107,6 +115,7 @@ async function main() {
         { lapakId: 1, price: 23000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 25000, het: 28000 },
         { lapakId: 3, price: 0, target: 25000, het: 35000 },
+        { lapakId: 4, price: 25000, target: 0, het: 0 },
       ],
     },
     {
@@ -116,6 +125,7 @@ async function main() {
         { lapakId: 1, price: 30000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 32000, het: 35000 },
         { lapakId: 3, price: 0, target: 32000, het: 40000 },
+        { lapakId: 4, price: 32000, target: 0, het: 0 },
       ],
     },
     {
@@ -125,6 +135,7 @@ async function main() {
         { lapakId: 1, price: 50000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 52000, het: 56000 },
         { lapakId: 3, price: 0, target: 52000, het: 65000 },
+        { lapakId: 4, price: 52000, target: 0, het: 0 },
       ],
     },
     {
@@ -134,6 +145,7 @@ async function main() {
         { lapakId: 1, price: 73000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 75000, het: 81000 },
         { lapakId: 3, price: 0, target: 75000, het: 85000 },
+        { lapakId: 4, price: 75000, target: 0, het: 0 },
       ],
     },
     {
@@ -143,6 +155,7 @@ async function main() {
         { lapakId: 1, price: 124000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 125000, het: 135000 },
         { lapakId: 3, price: 0, target: 125000, het: 155000 },
+        { lapakId: 4, price: 125000, target: 0, het: 0 },
       ],
     },
     {
@@ -152,6 +165,7 @@ async function main() {
         { lapakId: 1, price: 73000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 75000, het: 81000 },
         { lapakId: 3, price: 0, target: 75000, het: 85000 },
+        { lapakId: 4, price: 75000, target: 0, het: 0 },
       ],
     },
     {
@@ -161,6 +175,7 @@ async function main() {
         { lapakId: 1, price: 124000, target: 0, het: 0 },
         { lapakId: 2, price: 0, target: 125000, het: 135000 },
         { lapakId: 3, price: 0, target: 125000, het: 155000 },
+        { lapakId: 4, price: 125000, target: 0, het: 0 },
       ],
     },
   ];

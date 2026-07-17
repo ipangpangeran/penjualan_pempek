@@ -7,10 +7,10 @@ import {
   Search,
   Plus,
   Edit2,
+  Trash2,
   ToggleLeft,
   ToggleRight,
   Package,
-  Layers,
   Save,
   Store,
   TrendingUp,
@@ -32,6 +32,7 @@ const ProductMaster = () => {
   const [newCogs, setNewCogs] = useState(0);
   const [newPrices, setNewPrices] = useState({
     price1: 0,
+    price4: 0,
     target2: 0,
     het2: 0,
     target3: 0,
@@ -43,6 +44,7 @@ const ProductMaster = () => {
   const [editCogs, setEditCogs] = useState(0);
   const [editPrices, setEditPrices] = useState({
     price1: 0,
+    price4: 0,
     target2: 0,
     het2: 0,
     target3: 0,
@@ -92,6 +94,7 @@ const ProductMaster = () => {
         cogs: newCogs,
         prices: [
           { lapakId: 1, price: newPrices.price1, target: 0, het: 0 },
+          { lapakId: 4, price: newPrices.price4, target: 0, het: 0 },
           { lapakId: 2, price: 0, target: newPrices.target2, het: newPrices.het2 },
           { lapakId: 3, price: 0, target: newPrices.target3, het: newPrices.het3 },
         ],
@@ -101,7 +104,7 @@ const ProductMaster = () => {
       setIsAddOpen(false);
       setNewName('');
       setNewCogs(0);
-      setNewPrices({ price1: 0, target2: 0, het2: 0, target3: 0, het3: 0 });
+      setNewPrices({ price1: 0, price4: 0, target2: 0, het2: 0, target3: 0, het3: 0 });
       fetchProducts();
     } catch (error) {
       console.error(error);
@@ -116,12 +119,13 @@ const ProductMaster = () => {
 
     // Map existing pricing config
     const price1 = product.prices?.find((p) => p.lapakId === 1)?.price || 0;
+    const price4 = product.prices?.find((p) => p.lapakId === 4)?.price || 0;
     const target2 = product.prices?.find((p) => p.lapakId === 2)?.target || 0;
     const het2 = product.prices?.find((p) => p.lapakId === 2)?.het || 0;
     const target3 = product.prices?.find((p) => p.lapakId === 3)?.target || 0;
     const het3 = product.prices?.find((p) => p.lapakId === 3)?.het || 0;
 
-    setEditPrices({ price1, target2, het2, target3, het3 });
+    setEditPrices({ price1, price4, target2, het2, target3, het3 });
     setIsEditOpen(true);
   };
 
@@ -139,6 +143,7 @@ const ProductMaster = () => {
         cogs: editCogs,
         prices: [
           { lapakId: 1, price: editPrices.price1, target: 0, het: 0 },
+          { lapakId: 4, price: editPrices.price4, target: 0, het: 0 },
           { lapakId: 2, price: 0, target: editPrices.target2, het: editPrices.het2 },
           { lapakId: 3, price: 0, target: editPrices.target3, het: editPrices.het3 },
         ],
@@ -150,6 +155,22 @@ const ProductMaster = () => {
     } catch (error) {
       console.error(error);
       showToast(error.response?.data?.message || 'Gagal memperbarui produk.', 'error');
+    }
+  };
+
+  const handleDeleteProduct = async (product) => {
+    const confirmDelete = window.confirm(
+      `Apakah Anda yakin ingin menghapus produk "${product.name}"?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/products/${product.id}`);
+      showToast(`Produk "${product.name}" berhasil dihapus.`, 'success');
+      fetchProducts();
+    } catch (error) {
+      console.error(error);
+      showToast(error.response?.data?.message || 'Gagal menghapus produk.', 'error');
     }
   };
 
@@ -214,8 +235,9 @@ const ProductMaster = () => {
                 <thead>
                   <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                     <th className="p-3">Nama Produk</th>
-                    <th className="p-3 text-right">Modal (HPP / Asli)</th>
-                    <th className="p-3 text-right">Harga Lapak 1</th>
+                    <th className="p-3 text-right">Modal (HPP)</th>
+                    <th className="p-3 text-right">Lapak 1 (Ipang)</th>
+                    <th className="p-3 text-right">Lapak 4 (Zahra)</th>
                     <th className="p-3 text-right">Lapak 2 (Target/HET)</th>
                     <th className="p-3 text-right">Lapak 3 (Target/HET)</th>
                     <th className="p-3 text-center">Status</th>
@@ -225,6 +247,7 @@ const ProductMaster = () => {
                 <tbody>
                   {filteredProducts.map((p) => {
                     const price1 = p.prices?.find((pr) => pr.lapakId === 1)?.price || 0;
+                    const price4 = p.prices?.find((pr) => pr.lapakId === 4)?.price || 0;
                     const target2 = p.prices?.find((pr) => pr.lapakId === 2)?.target || 0;
                     const het2 = p.prices?.find((pr) => pr.lapakId === 2)?.het || 0;
                     const target3 = p.prices?.find((pr) => pr.lapakId === 3)?.target || 0;
@@ -243,6 +266,9 @@ const ProductMaster = () => {
                         </td>
                         <td className="p-3 text-right font-semibold text-brand-text">
                           {formatRupiah(price1)}
+                        </td>
+                        <td className="p-3 text-right font-semibold text-brand-text">
+                          {formatRupiah(price4)}
                         </td>
                         <td className="p-3 text-right font-medium text-brand-text-muted">
                           <span className="text-[10px] text-brand-text-muted font-bold">Target:</span> {formatRupiah(target2)} <br />
@@ -265,12 +291,20 @@ const ProductMaster = () => {
                             )}
                           </button>
                         </td>
-                        <td className="p-3 text-center">
+                        <td className="p-3 text-center flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => openEditModal(p)}
                             className="p-1.5 rounded bg-brand-bg-input border border-brand-border text-brand-text hover:text-indigo-500 transition-colors"
+                            title="Edit Produk"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p)}
+                            className="p-1.5 rounded bg-brand-bg-input border border-brand-border text-brand-text hover:text-rose-500 transition-colors"
+                            title="Hapus Produk"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </td>
                       </tr>
@@ -313,12 +347,12 @@ const ProductMaster = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Pricing Lapak 1 */}
             <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
               <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
                 <Store className="w-4 h-4 text-brand-emerald" />
-                <span className="text-xs font-bold">Lapak Ipang</span>
+                <span className="text-xs font-bold">Lapak Ipang (1)</span>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] text-brand-text-muted font-semibold block">Harga Jual (Eceran)</label>
@@ -332,15 +366,33 @@ const ProductMaster = () => {
               </div>
             </div>
 
+            {/* Pricing Lapak 4 */}
+            <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
+              <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
+                <Store className="w-4 h-4 text-purple-400" />
+                <span className="text-xs font-bold">Lapak Zahra (4)</span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] text-brand-text-muted font-semibold block">Harga Jual (Eceran)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={newPrices.price4}
+                  onChange={(e) => setNewPrices({ ...newPrices, price4: parseInt(e.target.value) || 0 })}
+                  className="w-full bg-brand-card border border-brand-border focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none font-bold text-brand-text"
+                />
+              </div>
+            </div>
+
             {/* Pricing Lapak 2 */}
             <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
               <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
                 <TrendingUp className="w-4 h-4 text-brand-emerald" />
-                <span className="text-xs font-bold">Reseller PJP</span>
+                <span className="text-xs font-bold">Reseller PJP (2)</span>
               </div>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk Ipang</label>
+                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk</label>
                   <input
                     type="number"
                     min="0"
@@ -366,11 +418,11 @@ const ProductMaster = () => {
             <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
               <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
                 <TrendingUp className="w-4 h-4 text-brand-emerald" />
-                <span className="text-xs font-bold">Reseller RDTX/GRHA</span>
+                <span className="text-xs font-bold">Reseller RDTX (3)</span>
               </div>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk Ipang</label>
+                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk</label>
                   <input
                     type="number"
                     min="0"
@@ -440,12 +492,12 @@ const ProductMaster = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Pricing Lapak 1 */}
             <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
               <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
                 <Store className="w-4 h-4 text-brand-emerald" />
-                <span className="text-xs font-bold">Lapak Ipang</span>
+                <span className="text-xs font-bold">Lapak Ipang (1)</span>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] text-brand-text-muted font-semibold block">Harga Jual (Eceran)</label>
@@ -459,15 +511,33 @@ const ProductMaster = () => {
               </div>
             </div>
 
+            {/* Pricing Lapak 4 */}
+            <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
+              <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
+                <Store className="w-4 h-4 text-purple-400" />
+                <span className="text-xs font-bold">Lapak Zahra (4)</span>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] text-brand-text-muted font-semibold block">Harga Jual (Eceran)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editPrices.price4}
+                  onChange={(e) => setEditPrices({ ...editPrices, price4: parseInt(e.target.value) || 0 })}
+                  className="w-full bg-brand-card border border-brand-border focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none font-bold text-brand-text"
+                />
+              </div>
+            </div>
+
             {/* Pricing Lapak 2 */}
             <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
               <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
                 <TrendingUp className="w-4 h-4 text-brand-emerald" />
-                <span className="text-xs font-bold">Reseller PJP</span>
+                <span className="text-xs font-bold">Reseller PJP (2)</span>
               </div>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk Ipang</label>
+                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk</label>
                   <input
                     type="number"
                     min="0"
@@ -493,11 +563,11 @@ const ProductMaster = () => {
             <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-4">
               <div className="flex items-center gap-1.5 border-b border-brand-border pb-2 text-brand-text">
                 <TrendingUp className="w-4 h-4 text-brand-emerald" />
-                <span className="text-xs font-bold">Reseller RDTX/GRHA</span>
+                <span className="text-xs font-bold">Reseller RDTX (3)</span>
               </div>
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk Ipang</label>
+                  <label className="text-[10px] text-brand-text-muted font-semibold block">Target Masuk</label>
                   <input
                     type="number"
                     min="0"

@@ -411,7 +411,8 @@ const Report = () => {
   const resellerSales = reportData?.resellerSales || [];
   
   // Split reseller transactions into Lapak 2 and Lapak 3
-  const l1Sales = directSales;
+  const l1Sales = directSales.filter((s) => s.lapakId === 1);
+  const l4Sales = directSales.filter((s) => s.lapakId === 4);
   const l2Sales = resellerSales.filter((s) => s.lapakId === 2);
   const l3Sales = resellerSales.filter((s) => s.lapakId === 3);
 
@@ -419,6 +420,7 @@ const Report = () => {
 
   const getLapakName = (id) => {
     if (id === 1) return 'Lapak Ipang';
+    if (id === 4) return 'Lapak Zahra';
     if (id === 2) return 'Kang Asep PJP';
     if (id === 3) return 'Kang Asep RDTX & GRHA';
     return '';
@@ -474,6 +476,7 @@ const Report = () => {
             >
               <option value="all">Semua Lapak</option>
               <option value="1">Lapak Ipang (Eceran)</option>
+              <option value="4">Lapak Zahra (Eceran)</option>
               <option value="2">Kang Asep PJP (Reseller)</option>
               <option value="3">Kang Asep RDTX & GRHA (Reseller)</option>
             </select>
@@ -609,6 +612,76 @@ const Report = () => {
                     </thead>
                     <tbody>
                       {l1Sales.map((tx) => {
+                        const totalQty = tx.details.reduce((sum, d) => sum + d.qty, 0);
+                        return (
+                          <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
+                            <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
+                            <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
+                            <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
+                            <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
+                            <td className="p-3 text-center flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setSelectedTx(tx);
+                                  setIsDetailOpen(true);
+                                }}
+                                className="p-1 text-brand-text-muted hover:text-brand-emerald transition-colors"
+                                title="Lihat Detail"
+                              >
+                                <Eye className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => openEditModal(tx)}
+                                className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
+                                title="Edit Transaksi"
+                              >
+                                <Edit2 className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTx(tx.id, tx.invoiceNumber)}
+                                className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
+                                title="Hapus Transaksi"
+                              >
+                                <Trash2 className="w-4.5 h-4.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Table 4: Lapak Zahra (Lapak 4) */}
+          {(lapakId === 'all' || parseInt(lapakId) === 4) && (
+            <div className="bg-brand-card rounded-3xl p-6 border border-brand-border shadow-sm space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-brand-text">Daftar Transaksi: Lapak Zahra (Lapak 4)</h3>
+                <p className="text-[10px] text-brand-text-muted font-medium">Total {l4Sales.length} transaksi ritel</p>
+              </div>
+
+              {l4Sales.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 border border-dashed border-brand-border rounded-2xl text-brand-text-muted gap-2">
+                  <AlertCircle className="w-6 h-6 opacity-45" />
+                  <span className="text-xs">Tidak ditemukan transaksi Lapak Zahra.</span>
+                </div>
+              ) : (
+                <div className="border border-brand-border rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+                    <thead>
+                      <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
+                        <th className="p-3">Tanggal</th>
+                        <th className="p-3">Nama Pembeli</th>
+                        <th className="p-3 text-center">Qty</th>
+                        <th className="p-3 text-right">Total Transaksi</th>
+                        <th className="p-3 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {l4Sales.map((tx) => {
                         const totalQty = tx.details.reduce((sum, d) => sum + d.qty, 0);
                         return (
                           <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">

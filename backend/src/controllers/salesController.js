@@ -30,7 +30,7 @@ export const createSale = async (req, res) => {
   const { lapakId, saleDate, buyerName, items } = req.body;
 
   const targetLapakId = parseInt(lapakId);
-  if (targetLapakId !== 1 && targetLapakId !== 2 && targetLapakId !== 3) {
+  if (targetLapakId !== 1 && targetLapakId !== 2 && targetLapakId !== 3 && targetLapakId !== 4) {
     return res.status(400).json({ message: 'ID Lapak tidak valid.' });
   }
 
@@ -78,7 +78,7 @@ export const createSale = async (req, res) => {
       let hakIpang = 0;
       let omzet = 0;
 
-      if (targetLapakId === 1) {
+      if (targetLapakId === 1 || targetLapakId === 4) {
         // Direct sale: price is basic price
         price = priceRecord.price || 0;
         target = 0;
@@ -158,7 +158,7 @@ export const createSale = async (req, res) => {
       return header;
     });
 
-    const lapakNames = { 1: 'Lapak Ipang', 2: 'Kang Asep PJP', 3: 'Kang Asep RDTX & GRHA' };
+    const lapakNames = { 1: 'Lapak Ipang', 2: 'Kang Asep PJP', 3: 'Kang Asep RDTX & GRHA', 4: 'Lapak Zahra' };
     await logAuditAction(
       req.user.username,
       'CREATE_SALE',
@@ -227,7 +227,7 @@ export const updateSale = async (req, res) => {
       let hakIpang = 0;
       let omzet = 0;
 
-      if (targetLapakId === 1) {
+      if (targetLapakId === 1 || targetLapakId === 4) {
         price = priceRecord.price || 0;
         target = 0;
         het = 0;
@@ -308,7 +308,7 @@ export const updateSale = async (req, res) => {
       return updated;
     });
 
-    const lapakNames = { 1: 'Lapak Ipang', 2: 'Kang Asep PJP', 3: 'Kang Asep RDTX & GRHA' };
+    const lapakNames = { 1: 'Lapak Ipang', 2: 'Kang Asep PJP', 3: 'Kang Asep RDTX & GRHA', 4: 'Lapak Zahra' };
     await logAuditAction(
       req.user.username,
       'UPDATE_SALE',
@@ -337,7 +337,7 @@ export const deleteSale = async (req, res) => {
 
     await prisma.salesHeader.delete({ where: { id: saleId } });
 
-    const lapakNames = { 1: 'Lapak Ipang', 2: 'Kang Asep PJP', 3: 'Kang Asep RDTX & GRHA' };
+    const lapakNames = { 1: 'Lapak Ipang', 2: 'Kang Asep PJP', 3: 'Kang Asep RDTX & GRHA', 4: 'Lapak Zahra' };
     await logAuditAction(
       req.user.username,
       'DELETE_SALE',

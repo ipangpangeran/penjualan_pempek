@@ -163,7 +163,7 @@ const InputSales = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Lapak 1 Card */}
           <button
             onClick={() => setActiveLapak(1)}
@@ -176,6 +176,26 @@ const InputSales = () => {
               <h3 className="font-bold text-brand-text tracking-tight text-sm">Lapak Ipang</h3>
               <p className="text-[10px] text-brand-text-muted mt-1.5 leading-relaxed">
                 Penjualan langsung ke konsumen. Harga jual = harga dasar. Tanpa bagi hasil.
+              </p>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-brand-emerald mt-2">
+              <span>Buka Kasir</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </button>
+
+          {/* Lapak 4 Card - Lapak Zahra */}
+          <button
+            onClick={() => setActiveLapak(4)}
+            className="bg-brand-card p-8 rounded-3xl border border-brand-border shadow-sm text-center flex flex-col items-center gap-4 hover:shadow-lg hover:border-emerald-500/20 hover:translate-y-[-2px] transition-all group duration-300"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-450 border border-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+              <Store className="w-6 h-6 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-bold text-brand-text tracking-tight text-sm">Lapak Zahra</h3>
+              <p className="text-[10px] text-brand-text-muted mt-1.5 leading-relaxed">
+                Penjualan langsung ke konsumen di Lapak Zahra. Harga eceran khusus. Tanpa bagi hasil.
               </p>
             </div>
             <div className="flex items-center gap-1 text-[11px] font-bold text-brand-emerald mt-2">
@@ -233,7 +253,9 @@ const InputSales = () => {
       ? 'Lapak Ipang (Eceran)'
       : activeLapak === 2
       ? 'Kang Asep PJP (Reseller)'
-      : 'Kang Asep RDTX & GRHA (Reseller)';
+      : activeLapak === 3
+      ? 'Kang Asep RDTX & GRHA (Reseller)'
+      : 'Lapak Zahra (Eceran)';
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">

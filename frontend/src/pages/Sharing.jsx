@@ -70,6 +70,7 @@ const Sharing = () => {
   let hppLapak1 = 0;
   let hppLapak2 = 0;
   let hppLapak3 = 0;
+  let hppLapak4 = 0;
 
   allSales.forEach((s) => {
     let transactionHpp = 0;
@@ -83,10 +84,12 @@ const Sharing = () => {
       hppLapak2 += transactionHpp;
     } else if (s.lapakId === 3) {
       hppLapak3 += transactionHpp;
+    } else if (s.lapakId === 4) {
+      hppLapak4 += transactionHpp;
     }
   });
 
-  const totalHppToSupplier = hppLapak1 + hppLapak2 + hppLapak3; // Ipang bayar ke Supplier
+  const totalHppToSupplier = hppLapak1 + hppLapak2 + hppLapak3 + hppLapak4; // Ipang bayar ke Supplier
 
   // 3. Calculate Ipang's clean net profit
   let totalHakIpangAll = 0; // Ipang's gross revenue from all lapaks
@@ -220,10 +223,14 @@ const Sharing = () => {
                 </div>
 
                 {/* Breakdown */}
-                <div className="grid grid-cols-3 gap-2 text-xs font-semibold">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
                   <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
                     <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 1</span>
                     <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak1)}</span>
+                  </div>
+                  <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
+                    <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 4</span>
+                    <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak4)}</span>
                   </div>
                   <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
                     <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 2</span>
@@ -327,6 +334,7 @@ const Sharing = () => {
 
 const getLapakName = (id) => {
   if (id === 1) return 'Lapak Ipang';
+  if (id === 4) return 'Lapak Zahra';
   if (id === 2) return 'Kang Asep PJP';
   if (id === 3) return 'Kang Asep RDTX';
   return '';

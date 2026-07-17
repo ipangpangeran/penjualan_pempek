@@ -21,6 +21,7 @@ router.get('/products/active', verifyToken, productController.getActiveProducts)
 router.post('/products', verifyToken, productController.createProduct);
 router.put('/products/:id', verifyToken, productController.updateProduct);
 router.patch('/products/:id/status', verifyToken, productController.toggleProductStatus);
+router.delete('/products/:id', verifyToken, productController.deleteProduct);
 
 // Unified Sales routes
 router.post('/sales', verifyToken, salesController.createSale);
