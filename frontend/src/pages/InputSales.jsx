@@ -78,7 +78,7 @@ const InputSales = () => {
       const product = activeProducts.find((p) => p.id === prodId);
       const priceRecord = product?.prices?.find((pr) => pr.lapakId === activeLapak) || {};
       
-      row.price = activeLapak === 1 ? (priceRecord.price || 0) : (priceRecord.het || 0);
+      row.price = (activeLapak === 1 || activeLapak === 4) ? (priceRecord.price || 0) : (priceRecord.het || 0);
       row.target = priceRecord.target || 0;
       row.het = priceRecord.het || 0;
     } else if (field === 'qty') {
@@ -87,8 +87,8 @@ const InputSales = () => {
 
     // Calculations
     row.subtotal = row.price * row.qty;
-    row.fee = activeLapak === 1 ? 0 : row.het * 0.07 * row.qty;
-    row.hakIpang = activeLapak === 1 ? row.subtotal : row.target * row.qty;
+    row.fee = (activeLapak === 1 || activeLapak === 4) ? 0 : row.het * 0.07 * row.qty;
+    row.hakIpang = (activeLapak === 1 || activeLapak === 4) ? row.subtotal : row.target * row.qty;
 
     setItems(newItems);
   };
@@ -321,7 +321,7 @@ const InputSales = () => {
                   <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
                     <th className="p-3">Produk</th>
                     <th className="p-3 w-28 text-center">Qty</th>
-                    {activeLapak === 1 ? (
+                    {(activeLapak === 1 || activeLapak === 4) ? (
                       <>
                         <th className="p-3 w-40 text-right">Harga Satuan</th>
                         <th className="p-3 w-44 text-right">Subtotal</th>
@@ -364,7 +364,7 @@ const InputSales = () => {
                           className="w-20 bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none text-center mx-auto block font-semibold"
                         />
                       </td>
-                      {activeLapak === 1 ? (
+                      {(activeLapak === 1 || activeLapak === 4) ? (
                         <>
                           <td className="p-3 text-right font-medium text-brand-text-muted">
                             {formatRupiah(item.price)}
@@ -414,7 +414,7 @@ const InputSales = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between border-t border-brand-border pt-6 gap-4">
             <div>
               <span className="text-[10px] text-brand-text-muted font-semibold uppercase block">Rekapitulasi Keuangan</span>
-              {activeLapak === 1 ? (
+              {(activeLapak === 1 || activeLapak === 4) ? (
                 <span className="text-xl font-black text-brand-emerald leading-tight">
                   {formatRupiah(totals.omzet)}
                 </span>
