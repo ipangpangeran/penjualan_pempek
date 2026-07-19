@@ -104,6 +104,21 @@ const Report = () => {
     }
   };
 
+  // Inline update payment status and method
+  const handleUpdatePayment = async (txId, newStatus, newMethod) => {
+    try {
+      await api.patch(`/sales/${txId}/payment`, {
+        paymentStatus: newStatus,
+        paymentMethod: newMethod,
+      });
+      showToast('Status & metode pembayaran diperbarui.', 'success');
+      fetchReport();
+    } catch (error) {
+      console.error(error);
+      showToast('Gagal memperbarui pembayaran.', 'error');
+    }
+  };
+
   // Open edit modal
   const openEditModal = (tx) => {
     setEditTx(tx);
@@ -607,6 +622,8 @@ const Report = () => {
                         <th className="p-3">Nama Pembeli</th>
                         <th className="p-3 text-center">Qty</th>
                         <th className="p-3 text-right">Total Transaksi</th>
+                        <th className="p-3 text-center">Status Bayar</th>
+                        <th className="p-3 text-center">Via</th>
                         <th className="p-3 text-center">Aksi</th>
                       </tr>
                     </thead>
@@ -619,6 +636,32 @@ const Report = () => {
                             <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
                             <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
                             <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentStatus || 'BELUM LUNAS'}
+                                onChange={(e) => handleUpdatePayment(tx.id, e.target.value, tx.paymentMethod)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold cursor-pointer border focus:outline-none transition-colors ${
+                                  tx.paymentStatus === 'LUNAS'
+                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                }`}
+                              >
+                                <option value="BELUM LUNAS" className="bg-slate-900 text-slate-200 font-bold">BELUM LUNAS</option>
+                                <option value="LUNAS" className="bg-slate-900 text-emerald-400 font-bold">LUNAS</option>
+                              </select>
+                            </td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentMethod || 'BELUM BAYAR'}
+                                onChange={(e) => handleUpdatePayment(tx.id, tx.paymentStatus, e.target.value)}
+                                className="bg-brand-bg-input border border-brand-border text-brand-text font-bold rounded-lg px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500 cursor-pointer"
+                              >
+                                <option value="BELUM BAYAR">-- Belum Bayar --</option>
+                                <option value="QRIS">QRIS</option>
+                                <option value="TF">TF (Transfer)</option>
+                                <option value="CASH">CASH (Tunai)</option>
+                              </select>
+                            </td>
                             <td className="p-3 text-center flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => {
@@ -677,6 +720,8 @@ const Report = () => {
                         <th className="p-3">Nama Pembeli</th>
                         <th className="p-3 text-center">Qty</th>
                         <th className="p-3 text-right">Total Transaksi</th>
+                        <th className="p-3 text-center">Status Bayar</th>
+                        <th className="p-3 text-center">Via</th>
                         <th className="p-3 text-center">Aksi</th>
                       </tr>
                     </thead>
@@ -689,6 +734,32 @@ const Report = () => {
                             <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
                             <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
                             <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentStatus || 'BELUM LUNAS'}
+                                onChange={(e) => handleUpdatePayment(tx.id, e.target.value, tx.paymentMethod)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold cursor-pointer border focus:outline-none transition-colors ${
+                                  tx.paymentStatus === 'LUNAS'
+                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                }`}
+                              >
+                                <option value="BELUM LUNAS" className="bg-slate-900 text-slate-200 font-bold">BELUM LUNAS</option>
+                                <option value="LUNAS" className="bg-slate-900 text-emerald-400 font-bold">LUNAS</option>
+                              </select>
+                            </td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentMethod || 'BELUM BAYAR'}
+                                onChange={(e) => handleUpdatePayment(tx.id, tx.paymentStatus, e.target.value)}
+                                className="bg-brand-bg-input border border-brand-border text-brand-text font-bold rounded-lg px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500 cursor-pointer"
+                              >
+                                <option value="BELUM BAYAR">-- Belum Bayar --</option>
+                                <option value="QRIS">QRIS</option>
+                                <option value="TF">TF (Transfer)</option>
+                                <option value="CASH">CASH (Tunai)</option>
+                              </select>
+                            </td>
                             <td className="p-3 text-center flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => {
@@ -749,6 +820,8 @@ const Report = () => {
                         <th className="p-3 text-right">Omzet Kotor (HET)</th>
                         <th className="p-3 text-right">Fee Reseller (7%)</th>
                         <th className="p-3 text-right">Hak Ipang (Bersih)</th>
+                        <th className="p-3 text-center">Status Bayar</th>
+                        <th className="p-3 text-center">Via</th>
                         <th className="p-3 text-center">Aksi</th>
                       </tr>
                     </thead>
@@ -763,6 +836,32 @@ const Report = () => {
                             <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
                             <td className="p-3 text-right font-semibold text-amber-500 bg-amber-500/5">{formatRupiah(tx.totalFee)}</td>
                             <td className="p-3 text-right font-bold text-brand-emerald bg-emerald-500/5">{formatRupiah(tx.totalHakIpang)}</td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentStatus || 'BELUM LUNAS'}
+                                onChange={(e) => handleUpdatePayment(tx.id, e.target.value, tx.paymentMethod)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold cursor-pointer border focus:outline-none transition-colors ${
+                                  tx.paymentStatus === 'LUNAS'
+                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                }`}
+                              >
+                                <option value="BELUM LUNAS" className="bg-slate-900 text-slate-200 font-bold">BELUM LUNAS</option>
+                                <option value="LUNAS" className="bg-slate-900 text-emerald-400 font-bold">LUNAS</option>
+                              </select>
+                            </td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentMethod || 'BELUM BAYAR'}
+                                onChange={(e) => handleUpdatePayment(tx.id, tx.paymentStatus, e.target.value)}
+                                className="bg-brand-bg-input border border-brand-border text-brand-text font-bold rounded-lg px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500 cursor-pointer"
+                              >
+                                <option value="BELUM BAYAR">-- Belum Bayar --</option>
+                                <option value="QRIS">QRIS</option>
+                                <option value="TF">TF (Transfer)</option>
+                                <option value="CASH">CASH (Tunai)</option>
+                              </select>
+                            </td>
                             <td className="p-3 text-center flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => {
@@ -823,6 +922,8 @@ const Report = () => {
                         <th className="p-3 text-right">Omzet Kotor (HET)</th>
                         <th className="p-3 text-right">Fee Reseller (7%)</th>
                         <th className="p-3 text-right">Hak Ipang (Bersih)</th>
+                        <th className="p-3 text-center">Status Bayar</th>
+                        <th className="p-3 text-center">Via</th>
                         <th className="p-3 text-center">Aksi</th>
                       </tr>
                     </thead>
@@ -837,6 +938,32 @@ const Report = () => {
                             <td className="p-3 text-right font-black text-brand-text">{formatRupiah(tx.totalAmount)}</td>
                             <td className="p-3 text-right font-semibold text-amber-500 bg-amber-500/5">{formatRupiah(tx.totalFee)}</td>
                             <td className="p-3 text-right font-bold text-brand-emerald bg-emerald-500/5">{formatRupiah(tx.totalHakIpang)}</td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentStatus || 'BELUM LUNAS'}
+                                onChange={(e) => handleUpdatePayment(tx.id, e.target.value, tx.paymentMethod)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold cursor-pointer border focus:outline-none transition-colors ${
+                                  tx.paymentStatus === 'LUNAS'
+                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                }`}
+                              >
+                                <option value="BELUM LUNAS" className="bg-slate-900 text-slate-200 font-bold">BELUM LUNAS</option>
+                                <option value="LUNAS" className="bg-slate-900 text-emerald-400 font-bold">LUNAS</option>
+                              </select>
+                            </td>
+                            <td className="p-3 text-center">
+                              <select
+                                value={tx.paymentMethod || 'BELUM BAYAR'}
+                                onChange={(e) => handleUpdatePayment(tx.id, tx.paymentStatus, e.target.value)}
+                                className="bg-brand-bg-input border border-brand-border text-brand-text font-bold rounded-lg px-2 py-1 text-[10px] focus:outline-none focus:border-emerald-500 cursor-pointer"
+                              >
+                                <option value="BELUM BAYAR">-- Belum Bayar --</option>
+                                <option value="QRIS">QRIS</option>
+                                <option value="TF">TF (Transfer)</option>
+                                <option value="CASH">CASH (Tunai)</option>
+                              </select>
+                            </td>
                             <td className="p-3 text-center flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => {

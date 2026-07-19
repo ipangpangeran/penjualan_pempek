@@ -29,8 +29,8 @@ model Product {
 model LapakPrice {
   id        Int      @id @default(autoincrement())
   productId Int
-  lapakId   Int      // 1: Lapak Ipang, 2: Kang Asep PJP, 3: Kang Asep RDTX & GRHA
-  price     Float    @default(0) // Lapak 1 price
+  lapakId   Int      // 1: Lapak Ipang, 2: Kang Asep PJP, 3: Kang Asep RDTX & GRHA, 4: Lapak Zahra
+  price     Float    @default(0) // Lapak 1/4 price
   target    Float    @default(0) // Lapak 2/3 target price
   het       Float    @default(0) // Lapak 2/3 HET price
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -45,11 +45,13 @@ model SalesHeader {
   invoiceNumber String        @unique
   buyerName     String
   saleDate      DateTime
-  lapakId       Int           // 1: Lapak Ipang, 2: Kang Asep PJP, 3: Kang Asep RDTX & GRHA
+  lapakId       Int           // 1: Lapak Ipang, 2: Kang Asep PJP, 3: Kang Asep RDTX & GRHA, 4: Lapak Zahra
   totalAmount   Float         // Total Omzet (HET * Qty or price * Qty)
   totalHakIpang Float         // Clean revenue (Target * Qty or price * Qty)
   totalFee      Float         // Reseller fee (7% of HET)
   totalProfit   Float         // Net Profit (totalHakIpang - totalCogs)
+  paymentStatus String        @default("BELUM LUNAS") // "LUNAS", "BELUM LUNAS"
+  paymentMethod String        @default("BELUM BAYAR") // "BELUM BAYAR", "QRIS", "TF", "CASH"
   details       SalesDetail[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -60,7 +62,7 @@ model SalesDetail {
   salesHeaderId Int
   productId     Int
   qty           Int
-  price         Float       // Selling Price (Lapak 1) or HET (Lapak 2 & 3)
+  price         Float       // Selling Price (Lapak 1 & 4) or HET (Lapak 2 & 3)
   target        Float       // Target price (Lapak 2 & 3)
   het           Float       // HET price (Lapak 2 & 3)
   fee           Float       // Reseller fee
@@ -73,6 +75,16 @@ model SalesDetail {
   product       Product     @relation(fields: [productId], references: [id])
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+model ResellerSettlement {
+  id             Int      @id @default(autoincrement())
+  settlementDate DateTime @default(now())
+  amount         Float
+  paymentMethod  String   // "QRIS", "TF", "CASH"
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Setting {

@@ -350,3 +350,45 @@ export const deleteSale = async (req, res) => {
     return res.status(500).json({ message: 'Terjadi kesalahan server.' });
   }
 };
+
+// Inline update payment status and payment method for a sale
+export const updatePaymentStatus = async (req, res) => {
+  const { id } = req.params;
+  const { paymentStatus, paymentMethod } = req.body;
+
+  try {
+    const saleId = parseInt(id);
+    const sale = await prisma.salesHeader.findUnique({ where: { id: saleId } });
+    if (!sale) {
+      return res.status(404).json({ message: 'Transaksi tidak ditemukan.' });
+    }
+
+    const validStatuses = ['LUNAS', 'BELUM LUNAS'];
+    const validMethods = ['BELUM BAYAR', 'QRIS', 'TF', 'CASH'];
+
+    const newStatus = validStatuses.includes(paymentStatus) ? paymentStatus : sale.paymentStatus;
+    const newMethod = validMethods.includes(paymentMethod) ? paymentMethod : sale.paymentMethod;
+
+    const updated = await prisma.salesHeader.update({
+      where: { id: saleId },
+      data: {
+        paymentStatus: newStatus,
+        paymentMethod: newMethod,
+      },
+    });
+
+    await logAuditAction(
+      req.user.username,
+      'UPDATE_PAYMENT_STATUS',
+      `Update status bayar transaksi ID ${id} (${sale.buyerName}): Status=${newStatus}, Via=${newMethod}`
+    );
+
+    return res.status(200).json({
+      message: 'Status pembayaran berhasil diperbarui.',
+      sale: updated,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Terjadi kesalahan server.' });
+  }
+};

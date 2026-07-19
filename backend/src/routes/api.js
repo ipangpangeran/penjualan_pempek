@@ -6,6 +6,7 @@ import * as productController from '../controllers/productController.js';
 import * as salesController from '../controllers/salesController.js';
 import * as reportController from '../controllers/reportController.js';
 import * as dbController from '../controllers/dbController.js';
+import * as settlementController from '../controllers/settlementController.js';
 
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
@@ -28,6 +29,12 @@ router.post('/sales', verifyToken, salesController.createSale);
 router.get('/sales/:id', verifyToken, salesController.getSaleById);
 router.put('/sales/:id', verifyToken, salesController.updateSale);
 router.delete('/sales/:id', verifyToken, salesController.deleteSale);
+router.patch('/sales/:id/payment', verifyToken, salesController.updatePaymentStatus);
+
+// Settlement (Kang Asep setoran) routes
+router.get('/settlements', verifyToken, settlementController.getSettlements);
+router.post('/settlements', verifyToken, settlementController.createSettlement);
+router.delete('/settlements/:id', verifyToken, settlementController.deleteSettlement);
 
 // Reports routes
 router.get('/reports/dashboard', verifyToken, reportController.getDashboardSummary);

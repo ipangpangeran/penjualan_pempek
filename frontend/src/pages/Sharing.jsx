@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../utils/api';
 import { formatRupiah, formatDateIndo, getLocalDateString } from '../utils/helpers';
 import { useToast } from '../context/ToastContext';
+import Modal from '../components/UI/Modal';
 import {
   Calendar,
   ArrowDownLeft,
@@ -10,6 +11,11 @@ import {
   Coins,
   Store,
   Info,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+  Save,
 } from 'lucide-react';
 
 const Sharing = () => {
@@ -19,19 +25,31 @@ const Sharing = () => {
   const [startDate, setStartDate] = useState(getLocalDateString());
   const [endDate, setEndDate] = useState(getLocalDateString());
   const [reportData, setReportData] = useState(null);
+  const [settlements, setSettlements] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Settlement Modal State
+  const [isSettlementOpen, setIsSettlementOpen] = useState(false);
+  const [settlementDate, setSettlementDate] = useState(getLocalDateString());
+  const [settlementAmount, setSettlementAmount] = useState(0);
+  const [settlementMethod, setSettlementMethod] = useState('TF');
+  const [settlementNotes, setSettlementNotes] = useState('');
+  const [isSubmittingSettlement, setIsSubmittingSettlement] = useState(false);
 
   const fetchSharingData = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get('/reports/query', {
-        params: {
-          startDate,
-          endDate,
-          lapakId: 'all',
-        },
+      // 1. Fetch sales query report
+      const salesRes = await api.get('/reports/query', {
+        params: { startDate, endDate, lapakId: 'all' },
       });
-      setReportData(response.data);
+      setReportData(salesRes.data);
+
+      // 2. Fetch Kang Asep settlements
+      const setresRes = await api.get('/settlements', {
+        params: { startDate, endDate },
+      });
+      setSettlements(setresRes.data.settlements);
     } catch (error) {
       console.error(error);
       showToast('Gagal memuat rekap bagi hasil.', 'error');
@@ -64,7 +82,11 @@ const Sharing = () => {
     }
   });
 
-  const totalOwedFromAsep = targetLapak2 + targetLapak3; // Kang Asep bayar ke Ipang
+  const totalOwedFromAsep = targetLapak2 + targetLapak3; // Total target Hak Ipang dari reseller
+
+  // Calculate Kang Asep total paid settlements
+  const totalPaidByAsep = settlements.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const settlementDiff = totalPaidByAsep - totalOwedFromAsep;
 
   // 2. Calculate HPP (Harga Modal) to be paid to Supplier / Seller
   let hppLapak1 = 0;
@@ -98,6 +120,54 @@ const Sharing = () => {
   });
 
   const cleanProfitIpang = totalHakIpangAll - totalHppToSupplier;
+
+  // Create Settlement Record Submit
+  const handleAddSettlement = async (e) => {
+    e.preventDefault();
+
+    if (!settlementAmount || Number(settlementAmount) <= 0) {
+      showToast('Nominal setoran harus lebih dari 0.', 'warning');
+      return;
+    }
+
+    setIsSubmittingSettlement(true);
+    try {
+      await api.post('/settlements', {
+        settlementDate: settlementDate,
+        amount: settlementAmount,
+        paymentMethod: settlementMethod,
+        notes: settlementNotes,
+      });
+
+      showToast('Catatan setoran Kang Asep berhasil disimpan.', 'success');
+      setIsSettlementOpen(false);
+      setSettlementAmount(0);
+      setSettlementNotes('');
+      fetchSharingData();
+    } catch (error) {
+      console.error(error);
+      showToast('Gagal menyimpan setoran.', 'error');
+    } finally {
+      setIsSubmittingSettlement(false);
+    }
+  };
+
+  // Delete Settlement Record
+  const handleDeleteSettlement = async (id, amount) => {
+    const confirmDelete = window.confirm(
+      `Apakah Anda yakin ingin menghapus catatan setoran Rp ${amount.toLocaleString('id-ID')} ini?`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/settlements/${id}`);
+      showToast('Catatan setoran berhasil dihapus.', 'success');
+      fetchSharingData();
+    } catch (error) {
+      console.error(error);
+      showToast('Gagal menghapus setoran.', 'error');
+    }
+  };
 
   return (
     <div className="space-y-6 text-brand-text">
@@ -156,90 +226,174 @@ const Sharing = () => {
             <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
             <div className="text-xs text-brand-text-muted space-y-1">
               <p className="font-semibold text-brand-text">Cara Pembagian Pembayaran & Aliran Kas:</p>
-              <p>• **Lapak 1 (Eceran)**: Pembeli langsung membayar ke Ipang. Ipang memegang uang kotor (`Omzet`).</p>
-              <p>• **Lapak 2 & 3 (Reseller)**: Pembeli membayar ke Kang Asep. Kang Asep memegang uang kotor (`HET`), lalu menyetorkan uang target (`Harga Dasar / Hak Ipang`) ke Ipang.</p>
+              <p>• **Lapak 1 & 4 (Eceran)**: Pembeli langsung membayar ke Ipang / Zahra secara tunai/transfer/QRIS.</p>
+              <p>• **Lapak 2 & 3 (Reseller Kang Asep)**: Pembeli membayar ke Kang Asep. Ipang hanya mencatat setoran uang yang diserahkan Kang Asep ke Ipang.</p>
               <p>• **Pembayaran HPP (Ipang ke Seller)**: Untuk semua produk yang laku terjual, Ipang harus membayar ke Produsen/Supplier Pempek sebesar harga modal (`Harga Asli / HPP`).</p>
             </div>
           </div>
 
-          {/* Main Sharing Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Card 1: Kang Asep bayar ke Ipang (Lapak 2 & 3) */}
-            <div className="bg-brand-card p-6 rounded-3xl border border-emerald-500/20 bg-emerald-500/[0.02] shadow-sm flex flex-col justify-between space-y-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-brand-emerald bg-emerald-500/10 px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <ArrowDownLeft className="w-4.5 h-4.5" />
-                    Setoran Reseller
-                  </span>
-                  <Coins className="w-5 h-5 text-brand-text-muted" />
+          {/* Section: Rekonsiliasi & Verification Setoran Kang Asep */}
+          <div className="bg-brand-card rounded-3xl p-6 border border-brand-border shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-brand-border pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Coins className="w-5 h-5 text-brand-emerald" />
+                  <h3 className="text-sm font-extrabold text-brand-text">Setoran Kang Asep (Lapak 2 & 3)</h3>
                 </div>
-                <h3 className="text-sm font-extrabold text-brand-text">Kang Asep bayar ke Ipang (Lapak 2 & 3)</h3>
-                <p className="text-[11px] text-brand-text-muted leading-relaxed">
-                  Total dana hasil penjualan pempek yang harus ditransfer oleh Kang Asep ke Ipang (berdasarkan Harga Dasar / Target Masuk).
+                <p className="text-[10px] text-brand-text-muted mt-0.5">
+                  Verifikasi kecocokan antara total target penjualan reseller dengan nominal yang disetorkan Kang Asep.
                 </p>
               </div>
 
-              <div className="space-y-4 pt-4 border-t border-brand-border/60">
-                <div className="text-3xl font-black text-brand-emerald tracking-tight">
-                  {formatRupiah(totalOwedFromAsep)}
+              <button
+                onClick={() => setIsSettlementOpen(true)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/10 shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Catat Setoran Kang Asep</span>
+              </button>
+            </div>
+
+            {/* Reconciliation Comparison Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Card 1: Target Seharusnya */}
+              <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-2">
+                <span className="text-[10px] text-brand-text-muted font-bold block uppercase">Total Target Seharusnya</span>
+                <span className="text-xl font-black text-brand-text block">{formatRupiah(totalOwedFromAsep)}</span>
+                <span className="text-[9px] text-brand-text-muted block">
+                  PJP: {formatRupiah(targetLapak2)} | RDTX: {formatRupiah(targetLapak3)}
+                </span>
+              </div>
+
+              {/* Card 2: Total Realisasi Setoran */}
+              <div className="bg-brand-bg-input p-4 rounded-2xl border border-brand-border space-y-2">
+                <span className="text-[10px] text-brand-text-muted font-bold block uppercase">Total Realisasi Setoran Kang Asep</span>
+                <span className="text-xl font-black text-emerald-400 block">{formatRupiah(totalPaidByAsep)}</span>
+                <span className="text-[9px] text-brand-text-muted block">
+                  Dari {settlements.length} transaksi setoran
+                </span>
+              </div>
+
+              {/* Card 3: Status Matching Verifikasi */}
+              <div className={`p-4 rounded-2xl border flex flex-col justify-between space-y-2 ${
+                settlementDiff >= 0
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-amber-500/10 border-amber-500/30'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase block tracking-wider text-brand-text-muted">Status Verifikasi</span>
+                  {settlementDiff >= 0 ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  )}
                 </div>
-                
-                {/* Breakdown */}
-                <div className="grid grid-cols-2 gap-4 text-xs font-semibold">
-                  <div className="bg-brand-bg-input p-3 rounded-xl border border-brand-border">
-                    <span className="text-[10px] text-brand-text-muted block font-bold">Lapak 2 (PJP)</span>
-                    <span className="text-brand-text font-extrabold mt-1 block">{formatRupiah(targetLapak2)}</span>
-                    <span className="text-[9px] text-brand-text-muted block mt-0.5">{countLapak2} Transaksi</span>
-                  </div>
-                  <div className="bg-brand-bg-input p-3 rounded-xl border border-brand-border">
-                    <span className="text-[10px] text-brand-text-muted block font-bold">Lapak 3 (RDTX)</span>
-                    <span className="text-brand-text font-extrabold mt-1 block">{formatRupiah(targetLapak3)}</span>
-                    <span className="text-[9px] text-brand-text-muted block mt-0.5">{countLapak3} Transaksi</span>
-                  </div>
+                <div>
+                  <span className={`text-base font-black tracking-tight block ${
+                    settlementDiff >= 0 ? 'text-emerald-500' : 'text-amber-500'
+                  }`}>
+                    {settlementDiff >= 0 ? 'LUNAS / SESUAI' : `KURANG BAYAR: ${formatRupiah(Math.abs(settlementDiff))}`}
+                  </span>
+                  <span className="text-[10px] text-brand-text-muted font-medium block mt-0.5">
+                    {settlementDiff >= 0
+                      ? `Setoran pas / surplus +${formatRupiah(settlementDiff)}`
+                      : `Kang Asep kurang menyetor ${formatRupiah(Math.abs(settlementDiff))}`}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Card 2: Ipang bayar ke Seller (HPP / Harga Asli) */}
-            <div className="bg-brand-card p-6 rounded-3xl border border-amber-500/20 bg-amber-500/[0.02] shadow-sm flex flex-col justify-between space-y-6">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-extrabold text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <ArrowUpRight className="w-4.5 h-4.5" />
-                    Harga Modal (HPP)
-                  </span>
-                  <Store className="w-5 h-5 text-brand-text-muted" />
+            {/* Table: Log Setoran Kang Asep */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-xs font-bold text-brand-text">Histori Catatan Setoran Kang Asep</h4>
+              {settlements.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-6 border border-dashed border-brand-border rounded-2xl text-brand-text-muted gap-2">
+                  <Coins className="w-6 h-6 opacity-45" />
+                  <span className="text-xs">Belum ada catatan setoran dari Kang Asep pada periode ini.</span>
                 </div>
-                <h3 className="text-sm font-extrabold text-brand-text">Ipang bayar ke Seller (Harga Asli)</h3>
-                <p className="text-[11px] text-brand-text-muted leading-relaxed">
-                  Total harga modal (HPP) yang harus dibayar Ipang ke produsen/pembuat pempek untuk seluruh produk yang terjual.
-                </p>
+              ) : (
+                <div className="border border-brand-border rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+                    <thead>
+                      <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
+                        <th className="p-3">Tanggal Setoran</th>
+                        <th className="p-3 text-right">Nominal Setoran</th>
+                        <th className="p-3 text-center">Via / Metode</th>
+                        <th className="p-3">Catatan</th>
+                        <th className="p-3 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {settlements.map((s) => (
+                        <tr key={s.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text">
+                          <td className="p-3 font-medium">{formatDateIndo(s.settlementDate)}</td>
+                          <td className="p-3 text-right font-black text-brand-emerald font-mono">
+                            {formatRupiah(s.amount)}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="px-2 py-0.5 rounded bg-brand-bg-input border border-brand-border font-bold text-[10px]">
+                              {s.paymentMethod}
+                            </span>
+                          </td>
+                          <td className="p-3 text-brand-text-muted font-medium italic">
+                            {s.notes || '-'}
+                          </td>
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => handleDeleteSettlement(s.id, s.amount)}
+                              className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
+                              title="Hapus Catatan Setoran"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main HPP Modal Payment to Supplier Card */}
+          <div className="bg-brand-card p-6 rounded-3xl border border-amber-500/20 bg-amber-500/[0.02] shadow-sm flex flex-col justify-between space-y-6">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full flex items-center gap-1.5">
+                  <ArrowUpRight className="w-4.5 h-4.5" />
+                  Harga Modal (HPP)
+                </span>
+                <Store className="w-5 h-5 text-brand-text-muted" />
+              </div>
+              <h3 className="text-sm font-extrabold text-brand-text">Ipang bayar ke Seller (Harga Asli)</h3>
+              <p className="text-[11px] text-brand-text-muted leading-relaxed">
+                Total harga modal (HPP) yang harus dibayar Ipang ke produsen/pembuat pempek untuk seluruh produk yang terjual di 4 lapak.
+              </p>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-brand-border/60">
+              <div className="text-3xl font-black text-amber-500 tracking-tight">
+                {formatRupiah(totalHppToSupplier)}
               </div>
 
-              <div className="space-y-4 pt-4 border-t border-brand-border/60">
-                <div className="text-3xl font-black text-amber-500 tracking-tight">
-                  {formatRupiah(totalHppToSupplier)}
+              {/* Breakdown */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
+                <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
+                  <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 1</span>
+                  <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak1)}</span>
                 </div>
-
-                {/* Breakdown */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 text-xs font-semibold">
-                  <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
-                    <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 1</span>
-                    <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak1)}</span>
-                  </div>
-                  <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
-                    <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 4</span>
-                    <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak4)}</span>
-                  </div>
-                  <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
-                    <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 2</span>
-                    <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak2)}</span>
-                  </div>
-                  <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
-                    <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 3</span>
-                    <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak3)}</span>
-                  </div>
+                <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
+                  <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 4</span>
+                  <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak4)}</span>
+                </div>
+                <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
+                  <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 2</span>
+                  <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak2)}</span>
+                </div>
+                <div className="bg-brand-bg-input p-2 rounded-xl border border-brand-border text-center">
+                  <span className="text-[9px] text-brand-text-muted block font-bold">Lapak 3</span>
+                  <span className="text-brand-text font-bold mt-1 block truncate">{formatRupiah(hppLapak3)}</span>
                 </div>
               </div>
             </div>
@@ -266,78 +420,92 @@ const Sharing = () => {
               </div>
             </div>
           </div>
-
-          {/* Transaksi Itemized List */}
-          <div className="bg-brand-card rounded-3xl p-6 border border-brand-border shadow-sm space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-brand-text">Daftar Rincian Transaksi Penjualan</h3>
-              <p className="text-[10px] text-brand-text-muted">Histori target setoran dan beban modal HPP dari seluruh transaksi</p>
-            </div>
-
-            {allSales.length === 0 ? (
-              <div className="flex flex-col items-center justify-center p-8 border border-dashed border-brand-border rounded-2xl text-brand-text-muted gap-2">
-                <Coins className="w-6 h-6 opacity-45" />
-                <span className="text-xs">Tidak ditemukan transaksi pada periode ini.</span>
-              </div>
-            ) : (
-              <div className="border border-brand-border rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
-                      <th className="p-3">Tanggal</th>
-                      <th className="p-3">Lapak / Outlet</th>
-                      <th className="p-3">Nama Pembeli</th>
-                      <th className="p-3 text-center">Qty</th>
-                      <th className="p-3 text-right">Uang Masuk Ipang</th>
-                      <th className="p-3 text-right">Harga Modal (HPP)</th>
-                      <th className="p-3 text-right">Untung Bersih</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allSales.map((tx) => {
-                      let txHpp = 0;
-                      tx.details.forEach((d) => {
-                        txHpp += (d.cogs || 0) * d.qty;
-                      });
-                      const totalQty = tx.details.reduce((sum, d) => sum + d.qty, 0);
-
-                      return (
-                        <tr key={tx.id} className="border-b border-brand-border/60 hover:bg-brand-table-hover/30 text-brand-text font-medium">
-                          <td className="p-3">{formatDateIndo(tx.saleDate)}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              tx.lapakId === 1 ? 'bg-emerald-500/10 text-emerald-500' :
-                              tx.lapakId === 2 ? 'bg-blue-500/10 text-blue-500' :
-                              'bg-purple-500/10 text-purple-500'
-                            }`}>
-                              {getLapakName(tx.lapakId)}
-                            </span>
-                          </td>
-                          <td className="p-3 font-semibold text-brand-text">{tx.buyerName}</td>
-                          <td className="p-3 text-center font-bold text-brand-text-muted">{totalQty} pcs</td>
-                          <td className="p-3 text-right font-bold text-brand-text font-mono">{formatRupiah(tx.totalHakIpang)}</td>
-                          <td className="p-3 text-right font-bold text-brand-text-muted font-mono">{formatRupiah(txHpp)}</td>
-                          <td className="p-3 text-right font-bold text-brand-emerald font-mono bg-emerald-500/5">{formatRupiah(tx.totalHakIpang - txHpp)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
         </div>
       )}
+
+      {/* MODAL: ADD KANG ASEP SETTLEMENT */}
+      <Modal isOpen={isSettlementOpen} onClose={() => setIsSettlementOpen(false)} title="Catat Setoran Kang Asep" size="md">
+        <form onSubmit={handleAddSettlement} className="space-y-4 text-brand-text">
+          {/* Settlement Date */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-brand-text-muted block">Tanggal Setoran / Transfer</label>
+            <input
+              type="date"
+              required
+              value={settlementDate}
+              onChange={(e) => setSettlementDate(e.target.value)}
+              className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none"
+            />
+          </div>
+
+          {/* Nominal Amount */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-brand-text-muted block">Nominal Setoran (Rp)</label>
+            <input
+              type="number"
+              min="1"
+              required
+              value={settlementAmount}
+              onChange={(e) => setSettlementAmount(e.target.value)}
+              placeholder="Contoh: 500000"
+              className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none font-bold text-brand-emerald"
+            />
+          </div>
+
+          {/* Payment Method */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-brand-text-muted block">Metode Pembayaran (Via)</label>
+            <select
+              value={settlementMethod}
+              onChange={(e) => setSettlementMethod(e.target.value)}
+              className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl py-2.5 px-3 text-xs focus:outline-none font-bold"
+            >
+              <option value="TF">TF (Bank Transfer)</option>
+              <option value="QRIS">QRIS</option>
+              <option value="CASH">CASH (Tunai)</option>
+            </select>
+          </div>
+
+          {/* Notes */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-brand-text-muted block">Catatan / Keterangan (Opsional)</label>
+            <textarea
+              rows="2"
+              value={settlementNotes}
+              onChange={(e) => setSettlementNotes(e.target.value)}
+              placeholder="Contoh: Setoran sebagian lapak PJP tanggal 15-17 Juli"
+              className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-xl p-3 text-xs focus:outline-none"
+            />
+          </div>
+
+          {/* Modal Actions */}
+          <div className="flex justify-end gap-2 pt-4 border-t border-brand-border">
+            <button
+              type="submit"
+              disabled={isSubmittingSettlement}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-emerald-600/10"
+            >
+              {isSubmittingSettlement ? (
+                <span>Menyimpan...</span>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Simpan Catatan Setoran</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSettlementOpen(false)}
+              className="bg-brand-bg-input hover:bg-brand-table-hover border border-brand-border text-brand-text font-bold py-2.5 px-4 rounded-xl text-xs"
+            >
+              Batal
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
-};
-
-const getLapakName = (id) => {
-  if (id === 1) return 'Lapak Ipang';
-  if (id === 4) return 'Lapak Zahra';
-  if (id === 2) return 'Kang Asep PJP';
-  if (id === 3) return 'Kang Asep RDTX';
-  return '';
 };
 
 export default Sharing;
