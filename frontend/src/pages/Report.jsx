@@ -10,6 +10,7 @@ import {
   Eye,
   Edit2,
   Trash2,
+  Share2,
   FileText,
   FileSpreadsheet,
   AlertCircle,
@@ -117,6 +118,56 @@ const Report = () => {
       console.error(error);
       showToast('Gagal memperbarui pembayaran.', 'error');
     }
+  };
+
+  // Format and copy transaction details for sharing to clipboard
+  const handleShareTx = (tx) => {
+    const lapakNames = {
+      1: 'Lapak Ipang (Eceran)',
+      2: 'Kang Asep PJP (Reseller)',
+      3: 'Kang Asep RDTX & GRHA (Reseller)',
+      4: 'Lapak Zahra (Eceran)'
+    };
+    
+    const dateStr = formatDateIndo(tx.saleDate);
+    let text = `*Rincian Penjualan - ${lapakNames[tx.lapakId]}*\n`;
+    text += `----------------------------------\n`;
+    text += `Tanggal: ${dateStr}\n`;
+    text += `Nama Pembeli: ${tx.buyerName}\n\n`;
+    
+    text += `*Daftar Belanjaan:*\n`;
+    tx.details.forEach((d) => {
+      const productName = d.product?.name || 'Produk';
+      if (tx.lapakId === 1 || tx.lapakId === 4) {
+        text += `- ${productName} x${d.qty} pcs: ${formatRupiah(d.subtotal)} (${formatRupiah(d.price)}/pcs)\n`;
+      } else {
+        text += `- ${productName} x${d.qty} pcs\n`;
+        text += `  • Target (Setoran): ${formatRupiah(d.hakIpang)} (${formatRupiah(d.target)}/pcs)\n`;
+        text += `  • HET (Konsumen): ${formatRupiah(d.omzet)} (${formatRupiah(d.het)}/pcs)\n`;
+        text += `  • Fee Reseller (7%): ${formatRupiah(d.fee)}\n`;
+      }
+    });
+    
+    text += `\n`;
+    text += `----------------------------------\n`;
+    if (tx.lapakId === 1 || tx.lapakId === 4) {
+      text += `*Total Tagihan (Harus Dibayar): ${formatRupiah(tx.totalAmount)}*\n`;
+    } else {
+      text += `*Total Omzet HET (Konsumen): ${formatRupiah(tx.totalAmount)}*\n`;
+      text += `*Total Setoran Kang Asep (Hak Ipang): ${formatRupiah(tx.totalHakIpang)}*\n`;
+      text += `*Total Keuntungan Reseller: ${formatRupiah(tx.totalFee)}*\n`;
+    }
+    text += `----------------------------------\n`;
+    text += `Terima kasih atas transaksinya! 🙏`;
+
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        showToast('Rincian belanja berhasil disalin ke clipboard!', 'success');
+      })
+      .catch((err) => {
+        console.error('Gagal menyalin text: ', err);
+        showToast('Gagal menyalin rincian belanja.', 'error');
+      });
   };
 
   // Open edit modal
@@ -674,6 +725,13 @@ const Report = () => {
                                 <Eye className="w-4.5 h-4.5" />
                               </button>
                               <button
+                                onClick={() => handleShareTx(tx)}
+                                className="p-1 text-brand-text-muted hover:text-sky-500 transition-colors"
+                                title="Salin Rincian (Share)"
+                              >
+                                <Share2 className="w-4.5 h-4.5" />
+                              </button>
+                              <button
                                 onClick={() => openEditModal(tx)}
                                 className="p-1 text-brand-text-muted hover:text-indigo-500 transition-colors"
                                 title="Edit Transaksi"
@@ -770,6 +828,13 @@ const Report = () => {
                                 title="Lihat Detail"
                               >
                                 <Eye className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => handleShareTx(tx)}
+                                className="p-1 text-brand-text-muted hover:text-sky-500 transition-colors"
+                                title="Salin Rincian (Share)"
+                              >
+                                <Share2 className="w-4.5 h-4.5" />
                               </button>
                               <button
                                 onClick={() => openEditModal(tx)}
@@ -872,6 +937,13 @@ const Report = () => {
                                 title="Lihat Detail"
                               >
                                 <Eye className="w-4.5 h-4.5" />
+                              </button>
+                              <button
+                                onClick={() => handleShareTx(tx)}
+                                className="p-1 text-brand-text-muted hover:text-sky-500 transition-colors"
+                                title="Salin Rincian (Share)"
+                              >
+                                <Share2 className="w-4.5 h-4.5" />
                               </button>
                               <button
                                 onClick={() => openEditModal(tx)}
@@ -1106,6 +1178,14 @@ const Report = () => {
 
             {/* Modal Footer Controls */}
             <div className="flex justify-end gap-2 pt-4 border-t border-brand-border">
+              <button
+                onClick={() => handleShareTx(selectedTx)}
+                className="bg-sky-500/10 border border-sky-500/20 text-sky-500 font-bold py-2 px-4 rounded-xl transition-all flex items-center gap-1.5 text-xs hover:bg-sky-500/20"
+                title="Salin Rincian (Share)"
+              >
+                <Share2 className="w-4.5 h-4.5" />
+                <span>Share</span>
+              </button>
               <button
                 onClick={() => openEditModal(selectedTx)}
                 className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 font-bold py-2 px-4 rounded-xl transition-all flex items-center gap-1.5 text-xs hover:bg-indigo-500/20"
