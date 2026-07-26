@@ -38,6 +38,10 @@ const Report = () => {
   const [selectedTx, setSelectedTx] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+  // Modal State - Share Transaction
+  const [shareTx, setShareTx] = useState(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+
   // Modal State - Edit Transaction
   const [editTx, setEditTx] = useState(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -120,8 +124,14 @@ const Report = () => {
     }
   };
 
-  // Format and copy transaction details for sharing to clipboard
-  const handleShareTx = (tx) => {
+  // Open share modal
+  const openShareModal = (tx) => {
+    setShareTx(tx);
+    setIsShareOpen(true);
+  };
+
+  // Format and copy transaction details for sharing to clipboard (Simplified)
+  const handleCopyShareText = (tx) => {
     const lapakNames = {
       1: 'Lapak Ipang (Eceran)',
       2: 'Kang Asep PJP (Reseller)',
@@ -141,21 +151,16 @@ const Report = () => {
       if (tx.lapakId === 1 || tx.lapakId === 4) {
         text += `- ${productName} x${d.qty} pcs: ${formatRupiah(d.subtotal)} (${formatRupiah(d.price)}/pcs)\n`;
       } else {
-        text += `- ${productName} x${d.qty} pcs\n`;
-        text += `  • Target (Setoran): ${formatRupiah(d.hakIpang)} (${formatRupiah(d.target)}/pcs)\n`;
-        text += `  • HET (Konsumen): ${formatRupiah(d.omzet)} (${formatRupiah(d.het)}/pcs)\n`;
-        text += `  • Fee Reseller (7%): ${formatRupiah(d.fee)}\n`;
+        text += `- ${productName} x${d.qty} pcs: ${formatRupiah(d.hakIpang)} (${formatRupiah(d.target)}/pcs)\n`;
       }
     });
     
     text += `\n`;
     text += `----------------------------------\n`;
     if (tx.lapakId === 1 || tx.lapakId === 4) {
-      text += `*Total Tagihan (Harus Dibayar): ${formatRupiah(tx.totalAmount)}*\n`;
+      text += `*Total Tagihan: ${formatRupiah(tx.totalAmount)}*\n`;
     } else {
-      text += `*Total Omzet HET (Konsumen): ${formatRupiah(tx.totalAmount)}*\n`;
-      text += `*Total Setoran Kang Asep (Hak Ipang): ${formatRupiah(tx.totalHakIpang)}*\n`;
-      text += `*Total Keuntungan Reseller: ${formatRupiah(tx.totalFee)}*\n`;
+      text += `*Total Setoran Kang Asep: ${formatRupiah(tx.totalHakIpang)}*\n`;
     }
     text += `----------------------------------\n`;
     text += `Terima kasih atas transaksinya! 🙏`;
@@ -725,7 +730,7 @@ const Report = () => {
                                 <Eye className="w-4.5 h-4.5" />
                               </button>
                               <button
-                                onClick={() => handleShareTx(tx)}
+                                onClick={() => openShareModal(tx)}
                                 className="p-1 text-brand-text-muted hover:text-sky-500 transition-colors"
                                 title="Salin Rincian (Share)"
                               >
@@ -830,7 +835,7 @@ const Report = () => {
                                 <Eye className="w-4.5 h-4.5" />
                               </button>
                               <button
-                                onClick={() => handleShareTx(tx)}
+                                onClick={() => openShareModal(tx)}
                                 className="p-1 text-brand-text-muted hover:text-sky-500 transition-colors"
                                 title="Salin Rincian (Share)"
                               >
@@ -939,7 +944,7 @@ const Report = () => {
                                 <Eye className="w-4.5 h-4.5" />
                               </button>
                               <button
-                                onClick={() => handleShareTx(tx)}
+                                onClick={() => openShareModal(tx)}
                                 className="p-1 text-brand-text-muted hover:text-sky-500 transition-colors"
                                 title="Salin Rincian (Share)"
                               >
@@ -1179,7 +1184,7 @@ const Report = () => {
             {/* Modal Footer Controls */}
             <div className="flex justify-end gap-2 pt-4 border-t border-brand-border">
               <button
-                onClick={() => handleShareTx(selectedTx)}
+                onClick={() => openShareModal(selectedTx)}
                 className="bg-sky-500/10 border border-sky-500/20 text-sky-500 font-bold py-2 px-4 rounded-xl transition-all flex items-center gap-1.5 text-xs hover:bg-sky-500/20"
                 title="Salin Rincian (Share)"
               >
@@ -1372,6 +1377,91 @@ const Report = () => {
               </div>
             </div>
           </form>
+        )}
+      </Modal>
+
+      {/* MODAL: SHARE TRANSACTION PREVIEW */}
+      <Modal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} title="Bagikan Rincian Penjualan" size="md">
+        {shareTx && (
+          <div className="space-y-6 text-brand-text">
+            {/* Elegant Receipt Card for Screenshot */}
+            <div className="bg-brand-bg-input p-6 rounded-2xl border border-brand-border/80 shadow-sm relative overflow-hidden font-mono text-xs max-w-sm mx-auto">
+              {/* Receipt Header */}
+              <div className="text-center space-y-1 pb-4 border-b border-dashed border-brand-border">
+                <h4 className="font-extrabold uppercase tracking-wider text-sm">Pempek Gluten Free</h4>
+                <p className="text-[10px] text-brand-text-muted">
+                  {shareTx.lapakId === 1 && 'Lapak Ipang (Eceran)'}
+                  {shareTx.lapakId === 2 && 'Kang Asep PJP (Reseller)'}
+                  {shareTx.lapakId === 3 && 'Kang Asep RDTX & GRHA (Reseller)'}
+                  {shareTx.lapakId === 4 && 'Lapak Zahra (Eceran)'}
+                </p>
+              </div>
+
+              {/* Receipt Info */}
+              <div className="py-4 space-y-1.5 border-b border-dashed border-brand-border text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-brand-text-muted">Tanggal:</span>
+                  <span className="font-bold">{formatDateIndo(shareTx.saleDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-brand-text-muted">Pelanggan:</span>
+                  <span className="font-bold">{shareTx.buyerName}</span>
+                </div>
+              </div>
+
+              {/* Receipt Items */}
+              <div className="py-4 space-y-3 border-b border-dashed border-brand-border">
+                {shareTx.details.map((d, i) => (
+                  <div key={i} className="space-y-1">
+                    <div className="flex justify-between font-bold">
+                      <span>{d.product?.name || 'Produk'}</span>
+                      <span>
+                        {formatRupiah((shareTx.lapakId === 1 || shareTx.lapakId === 4) ? d.subtotal : d.hakIpang)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-brand-text-muted">
+                      <span>Qty: {d.qty} pcs</span>
+                      <span>
+                        @{formatRupiah((shareTx.lapakId === 1 || shareTx.lapakId === 4) ? d.price : d.target)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Receipt Total */}
+              <div className="pt-4 flex justify-between items-center text-sm font-black">
+                <span>
+                  {(shareTx.lapakId === 1 || shareTx.lapakId === 4) ? 'TOTAL TAGIHAN' : 'TOTAL SETORAN'}
+                </span>
+                <span className="text-base text-brand-emerald">
+                  {formatRupiah((shareTx.lapakId === 1 || shareTx.lapakId === 4) ? shareTx.totalAmount : shareTx.totalHakIpang)}
+                </span>
+              </div>
+
+              {/* Receipt Footer */}
+              <div className="text-center text-[10px] text-brand-text-muted pt-6 mt-4 border-t border-dashed border-brand-border/60">
+                Terima kasih atas transaksinya! 🙏
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end gap-2 pt-4 border-t border-brand-border">
+              <button
+                onClick={() => handleCopyShareText(shareTx)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-emerald-600/10"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Salin Teks ke WA</span>
+              </button>
+              <button
+                onClick={() => setIsShareOpen(false)}
+                className="bg-brand-bg-input hover:bg-brand-table-hover border border-brand-border text-brand-text font-bold py-2.5 px-4 rounded-xl text-xs transition-all"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
         )}
       </Modal>
     </div>
