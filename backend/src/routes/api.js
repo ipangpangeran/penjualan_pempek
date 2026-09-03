@@ -7,6 +7,7 @@ import * as salesController from '../controllers/salesController.js';
 import * as reportController from '../controllers/reportController.js';
 import * as dbController from '../controllers/dbController.js';
 import * as settlementController from '../controllers/settlementController.js';
+import * as reconciliationController from '../controllers/reconciliationController.js';
 
 const router = Router();
 const upload = multer({ dest: 'uploads/' });
@@ -35,6 +36,11 @@ router.patch('/sales/:id/payment', verifyToken, salesController.updatePaymentSta
 router.get('/settlements', verifyToken, settlementController.getSettlements);
 router.post('/settlements', verifyToken, settlementController.createSettlement);
 router.delete('/settlements/:id', verifyToken, settlementController.deleteSettlement);
+
+// Supplier Reconciliation (Rekon Mba Rere) routes
+router.get('/reconciliations', verifyToken, reconciliationController.getReconciliations);
+router.post('/reconciliations', verifyToken, reconciliationController.createReconciliation);
+router.delete('/reconciliations/:id', verifyToken, reconciliationController.deleteReconciliation);
 
 // Reports routes
 router.get('/reports/dashboard', verifyToken, reportController.getDashboardSummary);

@@ -9,6 +9,7 @@ import Report from './pages/Report';
 import ProductMaster from './pages/ProductMaster';
 import Settings from './pages/Settings';
 import Sharing from './pages/Sharing';
+import RekonRere from './pages/RekonRere';
 
 const AppContent = () => {
   const { user, loading } = useAuth();
@@ -63,6 +64,8 @@ const AppContent = () => {
         return <Settings />;
       case 'sharing':
         return <Sharing />;
+      case 'rekon-rere':
+        return <RekonRere />;
       default:
         return <Dashboard setActivePage={setActivePage} />;
     }
