@@ -229,7 +229,7 @@ const RekonRere = () => {
     }
   };
 
-  // Build WhatsApp text from items
+  // Build WhatsApp text from items (Grouped by Buyer Name)
   const generateWAText = (targetItems, targetDate, targetNotes, targetTotal) => {
     const valid = targetItems.filter((it) => it.productName && it.qty > 0);
     if (valid.length === 0) return '';
@@ -242,11 +242,28 @@ const RekonRere = () => {
       text += `Keterangan: ${targetNotes.trim()}\n`;
     }
 
-    // List order items with Buyer Name
-    text += `\n*Rincian Pesanan:*\n`;
+    // Group items by Buyer Name
+    const buyerGroups = {};
     valid.forEach((d) => {
-      const buyer = d.buyerName && d.buyerName.trim() ? `${d.buyerName.trim()}: ` : '';
-      text += `- ${buyer}${d.productName} x${d.qty} pcs (${formatRupiah(d.subtotal)})\n`;
+      const buyer = d.buyerName && d.buyerName.trim() ? d.buyerName.trim() : 'Pesanan';
+      if (!buyerGroups[buyer]) {
+        buyerGroups[buyer] = [];
+      }
+      buyerGroups[buyer].push(d);
+    });
+
+    text += `\n*Rincian Pesanan:*\n`;
+    Object.entries(buyerGroups).forEach(([buyer, bItems]) => {
+      if (bItems.length === 1) {
+        const item = bItems[0];
+        text += `- ${buyer}: ${item.productName} (${item.qty}) - ${formatRupiah(item.subtotal)}\n`;
+      } else {
+        const buyerSubtotal = bItems.reduce((sum, it) => sum + it.subtotal, 0);
+        text += `*${buyer}:* (Total ${formatRupiah(buyerSubtotal)})\n`;
+        bItems.forEach((item) => {
+          text += `  • ${item.productName} (${item.qty}) - ${formatRupiah(item.subtotal)}\n`;
+        });
+      }
     });
 
     // Summary of products to prepare
@@ -279,9 +296,19 @@ const RekonRere = () => {
       return;
     }
 
+    const buyerGroups = {};
+    valid.forEach((d) => {
+      const buyer = d.buyerName && d.buyerName.trim() ? d.buyerName.trim() : 'Pesanan';
+      if (!buyerGroups[buyer]) {
+        buyerGroups[buyer] = [];
+      }
+      buyerGroups[buyer].push(d);
+    });
+
     const text = generateWAText(targetItems, targetDate, targetNotes, targetTotal);
     setShareData({
       items: valid,
+      buyerGroups,
       date: targetDate,
       notes: targetNotes,
       total: targetTotal,
@@ -395,6 +422,7 @@ const RekonRere = () => {
                       <td className="p-3">
                         <input
                           type="text"
+                          list="buyer-names-list"
                           placeholder="Nama..."
                           value={item.buyerName}
                           onChange={(e) => handleRowChange(index, 'buyerName', e.target.value)}
@@ -451,6 +479,13 @@ const RekonRere = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Auto-complete datalist for existing buyer names in this session */}
+            <datalist id="buyer-names-list">
+              {[...new Set(items.map((it) => it.buyerName?.trim()).filter(Boolean))].map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
 
             {/* Tambah Baris Button below table */}
             <div className="pt-2 flex items-center justify-between">
@@ -520,13 +555,23 @@ const RekonRere = () => {
               {Object.keys(buyerSummary).length === 0 ? (
                 <p className="text-[11px] text-brand-text-muted italic py-2">Belum ada pemesan yang diinput.</p>
               ) : (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {Object.entries(buyerSummary).map(([name, data]) => (
-                    <div key={name} className="flex justify-between items-center text-xs py-1 border-b border-brand-border/40">
-                      <span className="font-semibold text-brand-text">{name}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="font-bold text-indigo-400 font-mono">{data.qty} pcs</span>
-                        <span className="text-[11px] font-black text-brand-text font-mono">{formatRupiah(data.total)}</span>
+                    <div key={name} className="p-2.5 rounded-xl bg-brand-card border border-brand-border/60 space-y-1.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-indigo-400">{name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-brand-text font-mono">{data.qty} pcs</span>
+                          <span className="font-black text-brand-emerald font-mono">{formatRupiah(data.total)}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-0.5 text-[11px] text-brand-text-muted border-t border-brand-border/40 pt-1">
+                        {data.items.map((it, idx) => (
+                          <div key={idx} className="flex justify-between">
+                            <span>• {it.productName} ({it.qty} pcs)</span>
+                            <span className="font-mono">{formatRupiah(it.subtotal)}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}
@@ -794,26 +839,44 @@ const RekonRere = () => {
                 )}
               </div>
 
-              {/* Receipt Items with Buyer */}
-              <div className="py-4 space-y-2.5 border-b border-dashed border-brand-border">
+              {/* Receipt Items Grouped by Buyer */}
+              <div className="py-4 space-y-3 border-b border-dashed border-brand-border">
                 <span className="text-[10px] text-brand-text-muted font-bold block uppercase tracking-wider">
                   Daftar Pesanan:
                 </span>
-                {shareData.items.map((d, i) => (
-                  <div key={i} className="space-y-0.5">
-                    <div className="flex justify-between font-bold">
-                      <span className="truncate pr-2">
-                        {d.buyerName && d.buyerName.trim() ? `${d.buyerName.trim()}: ` : ''}
-                        {d.productName}
-                      </span>
-                      <span>{formatRupiah(d.subtotal)}</span>
+                {Object.entries(shareData.buyerGroups || {}).map(([buyer, bItems]) => (
+                  <div key={buyer} className="space-y-1 bg-brand-table-hover/20 p-2.5 rounded-xl">
+                    <div className="flex justify-between font-bold text-indigo-400 border-b border-dashed border-brand-border/50 pb-1 text-[11px]">
+                      <span>{buyer}</span>
+                      <span>{formatRupiah(bItems.reduce((s, it) => s + it.subtotal, 0))}</span>
                     </div>
-                    <div className="flex justify-between text-[10px] text-brand-text-muted">
-                      <span>Qty: {d.qty} pcs</span>
-                      <span>@{formatRupiah(d.price)}</span>
-                    </div>
+                    {bItems.map((d, i) => (
+                      <div key={i} className="flex justify-between text-[10px] pt-0.5">
+                        <span className="text-brand-text">{d.productName} ({d.qty} pcs)</span>
+                        <span className="font-mono text-brand-text-muted">{formatRupiah(d.subtotal)}</span>
+                      </div>
+                    ))}
                   </div>
                 ))}
+              </div>
+
+              {/* Receipt Items Summary (Barang Disiapkan) */}
+              <div className="py-3 space-y-1.5 border-b border-dashed border-brand-border text-[11px]">
+                <span className="text-[10px] text-brand-text-muted font-bold block uppercase tracking-wider">
+                  Total Barang Disiapkan:
+                </span>
+                {(() => {
+                  const prodMap = {};
+                  shareData.items.forEach((d) => {
+                    prodMap[d.productName] = (prodMap[d.productName] || 0) + d.qty;
+                  });
+                  return Object.entries(prodMap).map(([pName, pQty]) => (
+                    <div key={pName} className="flex justify-between">
+                      <span className="text-brand-text">{pName}</span>
+                      <span className="font-bold text-brand-emerald">{pQty} pcs</span>
+                    </div>
+                  ));
+                })()}
               </div>
 
               {/* Receipt Total */}
