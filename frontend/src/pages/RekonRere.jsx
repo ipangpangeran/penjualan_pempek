@@ -97,12 +97,11 @@ const RekonRere = () => {
     fetchHistory();
   }, []);
 
-  // Add row (defaults buyerName to previous row for fast entry)
+  // Add row
   const addRow = () => {
-    const lastBuyerName = items.length > 0 ? items[items.length - 1].buyerName : '';
     setItems([
       ...items,
-      { buyerName: lastBuyerName, productId: '', productName: '', qty: 1, price: 0, subtotal: 0 },
+      { buyerName: '', productId: '', productName: '', qty: 1, price: 0, subtotal: 0 },
     ]);
   };
 
