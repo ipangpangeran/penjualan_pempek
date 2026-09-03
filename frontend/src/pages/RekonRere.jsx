@@ -236,7 +236,7 @@ const RekonRere = () => {
     if (valid.length === 0) return '';
 
     const dateStr = formatDateIndo(targetDate);
-    let text = `*Rekon Pembayaran - Mba Rere*\n`;
+    let text = `*List Order*\n`;
     text += `----------------------------------\n`;
     text += `Tanggal: ${dateStr}\n`;
     if (targetNotes && targetNotes.trim()) {
@@ -409,14 +409,11 @@ const RekonRere = () => {
                           className="w-full min-w-[200px] bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none"
                         >
                           <option value="">-- Pilih Produk --</option>
-                          {products.map((p) => {
-                            const defaultPrice = MBA_RERE_PRICES[p.name] ?? p.cogs ?? 0;
-                            return (
-                              <option key={p.id} value={p.id}>
-                                {p.name} (Rp {defaultPrice.toLocaleString('id-ID')})
-                              </option>
-                            );
-                          })}
+                          {products.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
                         </select>
                       </td>
                       <td className="p-3">
@@ -780,8 +777,8 @@ const RekonRere = () => {
             <div className="bg-brand-bg-input p-6 rounded-2xl border border-brand-border/80 shadow-sm relative overflow-hidden font-mono text-xs max-w-sm mx-auto">
               {/* Receipt Header */}
               <div className="text-center space-y-1 pb-4 border-b border-dashed border-brand-border">
-                <h4 className="font-extrabold uppercase tracking-wider text-sm">REKON MBA RERE</h4>
-                <p className="text-[10px] text-brand-text-muted">Tagihan Penjual Asli / Supplier Pempek</p>
+                <h4 className="font-extrabold uppercase tracking-wider text-sm">LIST ORDER</h4>
+                <p className="text-[10px] text-brand-text-muted">Pempek Gluten Free</p>
               </div>
 
               {/* Receipt Info */}
