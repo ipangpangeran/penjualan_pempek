@@ -254,16 +254,12 @@ const RekonRere = () => {
 
     text += `\n*Rincian Pesanan:*\n`;
     Object.entries(buyerGroups).forEach(([buyer, bItems]) => {
-      if (bItems.length === 1) {
-        const item = bItems[0];
-        text += `- ${buyer}: ${item.productName} (${item.qty}) - ${formatRupiah(item.subtotal)}\n`;
-      } else {
-        const buyerSubtotal = bItems.reduce((sum, it) => sum + it.subtotal, 0);
-        text += `*${buyer}:* (Total ${formatRupiah(buyerSubtotal)})\n`;
-        bItems.forEach((item) => {
-          text += `  • ${item.productName} (${item.qty}) - ${formatRupiah(item.subtotal)}\n`;
-        });
-      }
+      const buyerSubtotal = bItems.reduce((sum, it) => sum + it.subtotal, 0);
+      text += `*${buyer}* (${formatRupiah(buyerSubtotal)})\n`;
+      bItems.forEach((item) => {
+        text += `• ${item.productName} (${item.qty} pcs) - ${formatRupiah(item.subtotal)}\n`;
+      });
+      text += `\n`;
     });
 
     // Summary of products to prepare
