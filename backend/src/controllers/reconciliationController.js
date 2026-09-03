@@ -62,6 +62,7 @@ export const createReconciliation = async (req, res) => {
       totalAmount += subtotal;
 
       return {
+        buyerName: it.buyerName ? it.buyerName.trim() : '',
         productId: it.productId ? parseInt(it.productId) : null,
         productName: it.productName,
         qty,

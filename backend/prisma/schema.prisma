@@ -116,6 +116,7 @@ model SupplierReconciliation {
 model SupplierReconciliationItem {
   id               Int                    @id @default(autoincrement())
   reconciliationId Int
+  buyerName        String?                @default("")
   productId        Int?
   productName      String
   qty              Int
