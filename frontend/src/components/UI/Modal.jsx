@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
@@ -27,38 +28,46 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     xl: 'max-w-4xl',
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-4 flex min-h-full items-start sm:items-center justify-center">
+  const modalContent = (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-brand-dark/70 backdrop-blur-sm transition-opacity duration-300"
+        className="fixed inset-0 bg-brand-dark/75 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      {/* Modal Content */}
-      <div
-        className={`relative bg-brand-card w-full rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-800/80 flex flex-col max-h-[88dvh] sm:max-h-[90vh] my-auto overflow-hidden z-10 transform scale-100 transition-all duration-300 ${
-          sizeClasses[size] || sizeClasses.md
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-slate-800/60 shrink-0">
-          <h3 className="text-sm font-bold text-white tracking-tight">{title}</h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-all"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+      {/* Centering Wrapper */}
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-4 text-center pointer-events-none">
+        {/* Modal Dialog Card */}
+        <div
+          className={`relative w-full ${
+            sizeClasses[size] || sizeClasses.md
+          } my-4 sm:my-8 bg-brand-card rounded-2xl sm:rounded-3xl shadow-2xl border border-brand-border text-left flex flex-col max-h-[85dvh] sm:max-h-[88vh] overflow-hidden z-10 pointer-events-auto transform scale-100 transition-all duration-300`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 sm:py-4 border-b border-brand-border shrink-0">
+            <h3 className="text-sm font-bold text-brand-text tracking-tight">{title}</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-brand-text-muted hover:text-brand-text hover:bg-brand-bg-input transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 text-xs text-slate-300 leading-relaxed">
-          {children}
+          {/* Body */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 text-xs text-brand-text leading-relaxed">
+            {children}
+          </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default Modal;
