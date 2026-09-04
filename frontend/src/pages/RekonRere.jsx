@@ -44,11 +44,14 @@ const RekonRere = () => {
   const [products, setProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
-  // Form states
+  // Form states: date, notes, and buyers list
   const [reconcileDate, setReconcileDate] = useState(getLocalDateString());
   const [notes, setNotes] = useState('');
-  const [items, setItems] = useState([
-    { buyerName: '', productId: '', productName: '', qty: 1, price: 0, subtotal: 0 },
+  const [buyers, setBuyers] = useState([
+    {
+      name: '',
+      items: [{ productId: '', productName: '', qty: 1, price: 0, subtotal: 0 }],
+    },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -97,82 +100,145 @@ const RekonRere = () => {
     fetchHistory();
   }, []);
 
-  // Add row
-  const addRow = () => {
-    setItems([
-      ...items,
-      { buyerName: '', productId: '', productName: '', qty: 1, price: 0, subtotal: 0 },
+  // --- Buyer & Product Management ---
+  // Add a new buyer card
+  const addBuyer = () => {
+    setBuyers([
+      ...buyers,
+      {
+        name: '',
+        items: [{ productId: '', productName: '', qty: 1, price: 0, subtotal: 0 }],
+      },
     ]);
   };
 
-  // Remove row
-  const removeRow = (index) => {
-    if (items.length === 1) {
-      showToast('Form harus memiliki minimal 1 produk.', 'warning');
+  // Remove a buyer card
+  const removeBuyer = (buyerIndex) => {
+    if (buyers.length === 1) {
+      showToast('Minimal harus ada 1 pemesan.', 'warning');
       return;
     }
-    const newItems = items.filter((_, i) => i !== index);
-    setItems(newItems);
+    setBuyers(buyers.filter((_, i) => i !== buyerIndex));
   };
 
-  // Handle row change
-  const handleRowChange = (index, field, value) => {
-    const newItems = [...items];
-    const row = newItems[index];
+  // Update buyer name
+  const handleBuyerNameChange = (buyerIndex, name) => {
+    const newBuyers = [...buyers];
+    newBuyers[buyerIndex].name = name;
+    setBuyers(newBuyers);
+  };
 
-    if (field === 'buyerName') {
-      row.buyerName = value;
-    } else if (field === 'productId') {
+  // Add a product row under a specific buyer
+  const addProductToBuyer = (buyerIndex) => {
+    const newBuyers = [...buyers];
+    newBuyers[buyerIndex].items.push({
+      productId: '',
+      productName: '',
+      qty: 1,
+      price: 0,
+      subtotal: 0,
+    });
+    setBuyers(newBuyers);
+  };
+
+  // Remove a product row from a specific buyer
+  const removeProductFromBuyer = (buyerIndex, itemIndex) => {
+    const newBuyers = [...buyers];
+    if (newBuyers[buyerIndex].items.length === 1) {
+      showToast('Setiap pemesan minimal memiliki 1 produk.', 'warning');
+      return;
+    }
+    newBuyers[buyerIndex].items = newBuyers[buyerIndex].items.filter((_, i) => i !== itemIndex);
+    setBuyers(newBuyers);
+  };
+
+  // Handle product row change for a specific buyer
+  const handleItemChange = (buyerIndex, itemIndex, field, value) => {
+    const newBuyers = [...buyers];
+    const item = newBuyers[buyerIndex].items[itemIndex];
+
+    if (field === 'productId') {
       const prodId = parseInt(value);
-      row.productId = prodId;
+      item.productId = prodId;
 
       const product = products.find((p) => p.id === prodId);
       if (product) {
-        row.productName = product.name;
-        // Lookup from MBA_RERE_PRICES table, fallback to product.cogs
+        item.productName = product.name;
         const defaultPrice = MBA_RERE_PRICES[product.name] ?? product.cogs ?? 0;
-        row.price = defaultPrice;
+        item.price = defaultPrice;
       } else {
-        row.productName = '';
-        row.price = 0;
+        item.productName = '';
+        item.price = 0;
       }
     } else if (field === 'qty') {
-      row.qty = parseInt(value) || 0;
+      item.qty = parseInt(value) || 0;
     } else if (field === 'price') {
-      row.price = parseFloat(value) || 0;
+      item.price = parseFloat(value) || 0;
     }
 
-    row.subtotal = (row.qty || 0) * (row.price || 0);
-    setItems(newItems);
+    item.subtotal = (item.qty || 0) * (item.price || 0);
+    setBuyers(newBuyers);
   };
 
-  // Calculations: Total Qty and Total Amount
-  const totalQty = items.reduce((sum, item) => sum + (item.qty || 0), 0);
-  const totalAmount = items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+  // Flatten buyers structure into flat items array
+  const getFlattenedItems = () => {
+    const flat = [];
+    buyers.forEach((b) => {
+      const bName = b.name.trim();
+      b.items.forEach((it) => {
+        if (it.productName && it.qty > 0) {
+          flat.push({
+            buyerName: bName,
+            productId: it.productId,
+            productName: it.productName,
+            qty: it.qty,
+            price: it.price,
+            subtotal: it.subtotal,
+          });
+        }
+      });
+    });
+    return flat;
+  };
 
-  // Grouping 1: Total Rekap per Produk (For supplier fulfillment)
+  // Calculations: Total Qty and Total Amount across all buyers
+  const totalQty = buyers.reduce(
+    (sum, b) => sum + b.items.reduce((iSum, it) => iSum + (it.qty || 0), 0),
+    0
+  );
+  const totalAmount = buyers.reduce(
+    (sum, b) => sum + b.items.reduce((iSum, it) => iSum + (it.subtotal || 0), 0),
+    0
+  );
+
+  // Grouping 1: Total Rekap per Produk (For supplier preparation)
   const productSummary = {};
-  items.forEach((it) => {
-    if (it.productName && it.qty > 0) {
-      if (!productSummary[it.productName]) {
-        productSummary[it.productName] = { qty: 0, total: 0, price: it.price };
+  buyers.forEach((b) => {
+    b.items.forEach((it) => {
+      if (it.productName && it.qty > 0) {
+        if (!productSummary[it.productName]) {
+          productSummary[it.productName] = { qty: 0, total: 0, price: it.price };
+        }
+        productSummary[it.productName].qty += it.qty;
+        productSummary[it.productName].total += it.subtotal;
       }
-      productSummary[it.productName].qty += it.qty;
-      productSummary[it.productName].total += it.subtotal;
-    }
+    });
   });
 
   // Grouping 2: Total Rekap per Pembeli
   const buyerSummary = {};
-  items.forEach((it) => {
-    if (it.productName && it.qty > 0) {
-      const name = it.buyerName ? it.buyerName.trim() : 'Tanpa Nama';
+  buyers.forEach((b) => {
+    const name = b.name.trim() || 'Tanpa Nama';
+    const validItems = b.items.filter((it) => it.productName && it.qty > 0);
+    if (validItems.length > 0) {
       if (!buyerSummary[name]) {
         buyerSummary[name] = { qty: 0, total: 0, items: [] };
       }
-      buyerSummary[name].qty += it.qty;
-      buyerSummary[name].total += it.subtotal;
-      buyerSummary[name].items.push(it);
+      validItems.forEach((it) => {
+        buyerSummary[name].qty += it.qty;
+        buyerSummary[name].total += it.subtotal;
+        buyerSummary[name].items.push(it);
+      });
     }
   });
 
@@ -180,15 +246,20 @@ const RekonRere = () => {
   const handleReset = () => {
     setReconcileDate(getLocalDateString());
     setNotes('');
-    setItems([{ buyerName: '', productId: '', productName: '', qty: 1, price: 0, subtotal: 0 }]);
+    setBuyers([
+      {
+        name: '',
+        items: [{ productId: '', productName: '', qty: 1, price: 0, subtotal: 0 }],
+      },
+    ]);
   };
 
   // Save reconciliation
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validItems = items.filter((item) => item.productName && item.qty > 0);
-    if (validItems.length === 0) {
+    const flatItems = getFlattenedItems();
+    if (flatItems.length === 0) {
       showToast('Pilih minimal 1 produk dengan jumlah (Qty) lebih dari 0.', 'warning');
       return;
     }
@@ -198,7 +269,7 @@ const RekonRere = () => {
       await api.post('/reconciliations', {
         reconcileDate,
         notes,
-        items: validItems,
+        items: flatItems,
       });
 
       showToast('Catatan Rekon Mba Rere berhasil disimpan!', 'success');
@@ -229,7 +300,7 @@ const RekonRere = () => {
     }
   };
 
-  // Build WhatsApp text from items (Grouped by Buyer Name)
+  // Build WhatsApp text from items (Grouped by Buyer Name consistently)
   const generateWAText = (targetItems, targetDate, targetNotes, targetTotal) => {
     const valid = targetItems.filter((it) => it.productName && it.qty > 0);
     if (valid.length === 0) return '';
@@ -270,7 +341,7 @@ const RekonRere = () => {
       totalPcs += d.qty;
     });
 
-    text += `\n*Rekap Total Barang Disiapkan:*\n`;
+    text += `*Rekap Total Barang Disiapkan:*\n`;
     Object.entries(prodMap).forEach(([pName, pQty]) => {
       text += `• ${pName}: ${pQty} pcs\n`;
     });
@@ -336,7 +407,7 @@ const RekonRere = () => {
             <h2 className="text-lg font-extrabold text-brand-text">Rekon Mba Rere</h2>
           </div>
           <p className="text-xs text-brand-text-muted mt-1">
-            Catat nama pemesan, produk, dan jumlahnya untuk rekap total belanja yang harus dibayar ke penjual asli (Mba Rere).
+            Catat nama pemesan, produk-produk yang dibeli, serta total tagihan yang harus dibayarkan ke penjual asli (Mba Rere).
           </p>
         </div>
 
@@ -384,114 +455,164 @@ const RekonRere = () => {
             </div>
           </div>
 
-          {/* Product Items Table with Nama column */}
-          <div className="space-y-3">
+          {/* List of Buyer Sections */}
+          <div className="space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-brand-text uppercase tracking-wider">
-                Daftar Pesanan & Harga Mba Rere
+                Daftar Pesanan Pemesan & Produk
               </h3>
               <span className="text-[10px] text-brand-text-muted">
-                Nama pemesan, produk yang dibeli, dan qty.
+                {buyers.length} Pemesan Terdaftar
               </span>
             </div>
 
-            <div className="border border-brand-border rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
-                <thead>
-                  <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
-                    <th className="p-3 w-10 text-center">No</th>
-                    <th className="p-3 w-48">Nama Pemesan / Pembeli</th>
-                    <th className="p-3">Produk</th>
-                    <th className="p-3 w-24 text-center">Qty</th>
-                    <th className="p-3 w-36 text-right">Harga Satuan</th>
-                    <th className="p-3 w-36 text-right">Subtotal</th>
-                    <th className="p-3 w-16 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="border-b border-brand-border/60 hover:bg-brand-table-hover/40 text-brand-text"
-                    >
-                      <td className="p-3 text-center font-mono text-brand-text-muted">{index + 1}</td>
-                      <td className="p-3">
-                        <input
-                          type="text"
-                          list="buyer-names-list"
-                          placeholder="Nama..."
-                          value={item.buyerName}
-                          onChange={(e) => handleRowChange(index, 'buyerName', e.target.value)}
-                          className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none font-semibold"
-                        />
-                      </td>
-                      <td className="p-3">
-                        <select
-                          value={item.productId}
-                          onChange={(e) => handleRowChange(index, 'productId', e.target.value)}
-                          className="w-full min-w-[200px] bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none"
-                        >
-                          <option value="">-- Pilih Produk --</option>
-                          {products.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.qty}
-                          onChange={(e) => handleRowChange(index, 'qty', e.target.value)}
-                          className="w-20 bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none text-center mx-auto block font-semibold"
-                        />
-                      </td>
-                      <td className="p-3 text-right">
-                        <input
-                          type="number"
-                          min="0"
-                          value={item.price}
-                          onChange={(e) => handleRowChange(index, 'price', e.target.value)}
-                          className="w-28 bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none text-right font-mono ml-auto block font-semibold"
-                        />
-                      </td>
-                      <td className="p-3 text-right font-black text-brand-text font-mono">
-                        {formatRupiah(item.subtotal)}
-                      </td>
-                      <td className="p-3 text-center">
+            {buyers.map((buyer, buyerIndex) => {
+              const buyerQty = buyer.items.reduce((s, it) => s + (it.qty || 0), 0);
+              const buyerTotal = buyer.items.reduce((s, it) => s + (it.subtotal || 0), 0);
+
+              return (
+                <div
+                  key={buyerIndex}
+                  className="bg-brand-bg-input/60 rounded-2xl border border-brand-border/90 p-4 sm:p-5 space-y-3.5 transition-all shadow-xs"
+                >
+                  {/* Buyer Card Header */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-brand-border/60 pb-3">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto flex-1 max-w-md">
+                      <div className="w-7 h-7 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0">
+                        <Users className="w-3.5 h-3.5" />
+                      </div>
+                      <input
+                        type="text"
+                        placeholder={`Nama Pemesan #${buyerIndex + 1} (contoh: Ipang)...`}
+                        value={buyer.name}
+                        onChange={(e) => handleBuyerNameChange(buyerIndex, e.target.value)}
+                        className="w-full bg-brand-card border border-brand-border text-brand-text focus:border-indigo-500 rounded-xl py-1.5 px-3 text-xs focus:outline-none font-bold placeholder:text-brand-text-muted/60"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-4">
+                      <div className="text-right font-mono">
+                        <span className="text-[10px] text-brand-text-muted block">Subtotal Pemesan</span>
+                        <span className="text-xs font-bold text-indigo-400">
+                          {formatRupiah(buyerTotal)}
+                        </span>
+                        <span className="text-[10px] text-brand-text-muted ml-1">({buyerQty} pcs)</span>
+                      </div>
+
+                      {buyers.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => removeRow(index)}
-                          className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
-                          title="Hapus Baris"
+                          onClick={() => removeBuyer(buyerIndex)}
+                          className="p-1.5 text-brand-text-muted hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          title="Hapus Pemesan Ini"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                    </div>
+                  </div>
 
-            {/* Auto-complete datalist for existing buyer names in this session */}
-            <datalist id="buyer-names-list">
-              {[...new Set(items.map((it) => it.buyerName?.trim()).filter(Boolean))].map((name) => (
-                <option key={name} value={name} />
-              ))}
-            </datalist>
+                  {/* Buyer's Products Table */}
+                  <div className="border border-brand-border/80 rounded-xl overflow-hidden shadow-sm overflow-x-auto bg-brand-card">
+                    <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+                      <thead>
+                        <tr className="bg-brand-table-hdr border-b border-brand-border text-brand-text-muted font-semibold font-mono">
+                          <th className="p-2.5 w-10 text-center">No</th>
+                          <th className="p-2.5">Produk</th>
+                          <th className="p-2.5 w-24 text-center">Qty</th>
+                          <th className="p-2.5 w-32 text-right">Harga Satuan</th>
+                          <th className="p-2.5 w-36 text-right">Subtotal</th>
+                          <th className="p-2.5 w-12 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {buyer.items.map((item, itemIndex) => (
+                          <tr
+                            key={itemIndex}
+                            className="border-b border-brand-border/40 hover:bg-brand-table-hover/30 text-brand-text"
+                          >
+                            <td className="p-2.5 text-center font-mono text-brand-text-muted">{itemIndex + 1}</td>
+                            <td className="p-2.5">
+                              <select
+                                value={item.productId}
+                                onChange={(e) =>
+                                  handleItemChange(buyerIndex, itemIndex, 'productId', e.target.value)
+                                }
+                                className="w-full min-w-[200px] bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none"
+                              >
+                                <option value="">-- Pilih Produk --</option>
+                                {products.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="p-2.5">
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.qty}
+                                onChange={(e) =>
+                                  handleItemChange(buyerIndex, itemIndex, 'qty', e.target.value)
+                                }
+                                className="w-20 bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-1.5 text-xs focus:outline-none text-center mx-auto block font-semibold"
+                              />
+                            </td>
+                            <td className="p-2.5 text-right">
+                              <input
+                                type="number"
+                                min="0"
+                                value={item.price}
+                                onChange={(e) =>
+                                  handleItemChange(buyerIndex, itemIndex, 'price', e.target.value)
+                                }
+                                className="w-28 bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-1.5 text-xs focus:outline-none text-right font-mono ml-auto block font-semibold"
+                              />
+                            </td>
+                            <td className="p-2.5 text-right font-black text-brand-text font-mono">
+                              {formatRupiah(item.subtotal)}
+                            </td>
+                            <td className="p-2.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => removeProductFromBuyer(buyerIndex, itemIndex)}
+                                className="p-1 text-brand-text-muted hover:text-rose-500 transition-colors"
+                                title="Hapus Produk"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-            {/* Tambah Baris Button below table */}
-            <div className="pt-2 flex items-center justify-between">
+                  {/* Add Product button for this buyer */}
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => addProductToBuyer(buyerIndex)}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 hover:text-emerald-450 transition-colors bg-brand-card hover:bg-brand-table-hover/50 border border-brand-border/70 py-1.5 px-3 rounded-xl shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Tambah Produk untuk {buyer.name ? buyer.name : `Pemesan #${buyerIndex + 1}`}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Add New Buyer Button */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
               <button
                 type="button"
-                onClick={addRow}
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-500 hover:text-emerald-450 active:text-emerald-600 transition-colors bg-brand-bg-input hover:bg-brand-table-hover/40 border border-brand-border/65 py-2 px-4 rounded-xl shadow-sm"
+                onClick={addBuyer}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-xs font-bold text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 py-2.5 px-5 rounded-2xl shadow-sm transition-all"
               >
                 <Plus className="w-4 h-4" />
-                <span>Tambah Baris</span>
+                <span>Tambah Pemesan / Pembeli Baru</span>
               </button>
 
               <button
@@ -595,7 +716,7 @@ const RekonRere = () => {
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
               <button
                 type="button"
-                onClick={() => openShareModal(items, reconcileDate, notes, totalAmount)}
+                onClick={() => openShareModal(getFlattenedItems(), reconcileDate, notes, totalAmount)}
                 className="bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 font-bold py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 text-xs"
                 title="Buka menu share WhatsApp dan struk digital"
               >
