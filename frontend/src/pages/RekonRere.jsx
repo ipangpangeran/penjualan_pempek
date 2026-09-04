@@ -17,6 +17,7 @@ import {
   UserCheck,
   PackageCheck,
   Users,
+  Copy,
 } from 'lucide-react';
 import QuantityStepper from '../components/UI/QuantityStepper';
 
@@ -396,6 +397,12 @@ const RekonRere = () => {
         console.error('Gagal menyalin text: ', err);
         showToast('Gagal menyalin ke clipboard.', 'error');
       });
+  };
+
+  // Open WhatsApp directly with pre-filled text
+  const handleDirectWhatsApp = (text) => {
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -1011,19 +1018,31 @@ const RekonRere = () => {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t border-brand-border">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-4 border-t border-brand-border">
+              <button
+                type="button"
+                onClick={() => handleDirectWhatsApp(shareData.text)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs shadow-md shadow-emerald-600/20 active:scale-98"
+                title="Buka aplikasi WhatsApp langsung dengan pesan terisi"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Kirim ke WhatsApp Langsung</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => handleCopyClipboard(shareData.text)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-emerald-600/10"
+                className="bg-brand-bg-input hover:bg-brand-table-hover border border-brand-border text-brand-text font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs active:scale-98"
+                title="Salin teks ke clipboard untuk ditempel manual"
               >
-                <Share2 className="w-4 h-4" />
-                <span>Salin Teks ke WA</span>
+                <Copy className="w-4 h-4 text-sky-400" />
+                <span>Salin Teks (Clipboard)</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setIsShareOpen(false)}
-                className="bg-brand-bg-input hover:bg-brand-table-hover border border-brand-border text-brand-text font-bold py-2.5 px-4 rounded-xl text-xs transition-all"
+                className="bg-transparent hover:bg-brand-table-hover text-brand-text-muted hover:text-brand-text font-semibold py-2.5 px-3 rounded-xl text-xs transition-all text-center"
               >
                 Tutup
               </button>

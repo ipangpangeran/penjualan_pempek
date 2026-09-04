@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Plus,
   Save,
+  Copy,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -131,21 +132,21 @@ const Report = () => {
     setIsShareOpen(true);
   };
 
-  // Format and copy transaction details for sharing to clipboard (Simplified)
-  const handleCopyShareText = (tx) => {
+  // Generate formatted transaction share text
+  const generateTransactionShareText = (tx) => {
     const lapakNames = {
       1: 'Lapak Ipang (Eceran)',
       2: 'Kang Asep PJP (Reseller)',
       3: 'Kang Asep RDTX & GRHA (Reseller)',
-      4: 'Lapak Zahra (Eceran)'
+      4: 'Lapak Zahra (Eceran)',
     };
-    
+
     const dateStr = formatDateIndo(tx.saleDate);
     let text = `*Rincian Penjualan - ${lapakNames[tx.lapakId]}*\n`;
     text += `----------------------------------\n`;
     text += `Tanggal: ${dateStr}\n`;
     text += `Nama Pembeli: ${tx.buyerName}\n\n`;
-    
+
     text += `*Daftar Belanjaan:*\n`;
     tx.details.forEach((d) => {
       const productName = d.product?.name || 'Produk';
@@ -155,7 +156,7 @@ const Report = () => {
         text += `- ${productName} x${d.qty} pcs: ${formatRupiah(d.hakIpang)} (${formatRupiah(d.target)}/pcs)\n`;
       }
     });
-    
+
     text += `\n`;
     text += `----------------------------------\n`;
     if (tx.lapakId === 1 || tx.lapakId === 4) {
@@ -166,7 +167,14 @@ const Report = () => {
     text += `----------------------------------\n`;
     text += `Terima kasih atas transaksinya! 🙏`;
 
-    navigator.clipboard.writeText(text)
+    return text;
+  };
+
+  // Format and copy transaction details for sharing to clipboard (Simplified)
+  const handleCopyShareText = (tx) => {
+    const text = generateTransactionShareText(tx);
+    navigator.clipboard
+      .writeText(text)
       .then(() => {
         showToast('Rincian belanja berhasil disalin ke clipboard!', 'success');
       })
@@ -174,6 +182,13 @@ const Report = () => {
         console.error('Gagal menyalin text: ', err);
         showToast('Gagal menyalin rincian belanja.', 'error');
       });
+  };
+
+  // Open WhatsApp directly with pre-filled transaction text
+  const handleDirectWhatsApp = (tx) => {
+    const text = generateTransactionShareText(tx);
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   // Open edit modal
@@ -1446,17 +1461,31 @@ const Report = () => {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t border-brand-border">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-4 border-t border-brand-border">
               <button
-                onClick={() => handleCopyShareText(shareTx)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-md shadow-emerald-600/10"
+                type="button"
+                onClick={() => handleDirectWhatsApp(shareTx)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs shadow-md shadow-emerald-600/20 active:scale-98"
+                title="Buka aplikasi WhatsApp langsung dengan pesan terisi"
               >
                 <Share2 className="w-4 h-4" />
-                <span>Salin Teks ke WA</span>
+                <span>Kirim ke WhatsApp Langsung</span>
               </button>
+
               <button
+                type="button"
+                onClick={() => handleCopyShareText(shareTx)}
+                className="bg-brand-bg-input hover:bg-brand-table-hover border border-brand-border text-brand-text font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 text-xs active:scale-98"
+                title="Salin teks ke clipboard untuk ditempel manual"
+              >
+                <Copy className="w-4 h-4 text-sky-400" />
+                <span>Salin Teks (Clipboard)</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setIsShareOpen(false)}
-                className="bg-brand-bg-input hover:bg-brand-table-hover border border-brand-border text-brand-text font-bold py-2.5 px-4 rounded-xl text-xs transition-all"
+                className="bg-transparent hover:bg-brand-table-hover text-brand-text-muted hover:text-brand-text font-semibold py-2.5 px-3 rounded-xl text-xs transition-all text-center"
               >
                 Tutup
               </button>
