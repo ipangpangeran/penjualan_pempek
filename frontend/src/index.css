@@ -81,3 +81,23 @@
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }
+
+/* Remove native number input spinners across all desktop & mobile browsers */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield !important;
+}
+
+/* Mobile touch responsiveness & smooth scrolling */
+button, input, select, textarea {
+  touch-action: manipulation;
+}
+
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}

@@ -13,6 +13,7 @@ import {
   ArrowRight,
   TrendingUp,
 } from 'lucide-react';
+import QuantityStepper from '../components/UI/QuantityStepper';
 
 const InputSales = () => {
   const { showToast } = useToast();
@@ -355,13 +356,11 @@ const InputSales = () => {
                           ))}
                         </select>
                       </td>
-                      <td className="p-3">
-                        <input
-                          type="number"
-                          min="1"
+                      <td className="p-3 text-center">
+                        <QuantityStepper
                           value={item.qty}
-                          onChange={(e) => handleRowChange(index, 'qty', e.target.value)}
-                          className="w-20 bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-2 text-xs focus:outline-none text-center mx-auto block font-semibold"
+                          onChange={(val) => handleRowChange(index, 'qty', val)}
+                          min={1}
                         />
                       </td>
                       {(activeLapak === 1 || activeLapak === 4) ? (

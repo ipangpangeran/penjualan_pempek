@@ -20,6 +20,7 @@ import {
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import QuantityStepper from '../components/UI/QuantityStepper';
 
 const Report = () => {
   const { showToast } = useToast();
@@ -1299,13 +1300,12 @@ const Report = () => {
                             ))}
                           </select>
                         </td>
-                        <td className="p-2">
-                          <input
-                            type="number"
-                            min="1"
+                        <td className="p-2 text-center">
+                          <QuantityStepper
                             value={item.qty}
-                            onChange={(e) => handleEditRowChange(index, 'qty', e.target.value)}
-                            className="w-full bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-1.5 text-xs focus:outline-none text-center"
+                            onChange={(val) => handleEditRowChange(index, 'qty', val)}
+                            min={1}
+                            size="sm"
                           />
                         </td>
                         {editTx.lapakId === 1 ? (

@@ -18,6 +18,7 @@ import {
   PackageCheck,
   Users,
 } from 'lucide-react';
+import QuantityStepper from '../components/UI/QuantityStepper';
 
 const MBA_RERE_PRICES = {
   'Mix isi 50': 90000,
@@ -548,15 +549,14 @@ const RekonRere = () => {
                                 ))}
                               </select>
                             </td>
-                            <td className="p-2.5">
-                              <input
-                                type="number"
-                                min="1"
+                            <td className="p-2.5 text-center">
+                              <QuantityStepper
                                 value={item.qty}
-                                onChange={(e) =>
-                                  handleItemChange(buyerIndex, itemIndex, 'qty', e.target.value)
+                                onChange={(val) =>
+                                  handleItemChange(buyerIndex, itemIndex, 'qty', val)
                                 }
-                                className="w-20 bg-brand-bg-input border border-brand-border text-brand-text focus:border-emerald-500 rounded-lg p-1.5 text-xs focus:outline-none text-center mx-auto block font-semibold"
+                                min={1}
+                                size="sm"
                               />
                             </td>
                             <td className="p-2.5 text-right">
